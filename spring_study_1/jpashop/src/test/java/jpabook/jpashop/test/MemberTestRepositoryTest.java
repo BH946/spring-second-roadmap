@@ -1,7 +1,5 @@
 package jpabook.jpashop.test;
 
-import jpabook.jpashop.test.Member;
-import jpabook.jpashop.test.MemberRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,16 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class MemberRepositoryTest {
-    @Autowired MemberRepository memberRepository;
+public class MemberTestRepositoryTest {
+    @Autowired
+    MemberTestRepository memberRepository;
     @Test
     @Transactional
     @Rollback(false)
     public void testMember() {
-        Member member = new Member();
+        MemberTest member = new MemberTest();
         member.setUsername("memberA");
         Long savedId = memberRepository.save(member);
-        Member findMember = memberRepository.find(savedId);
+        MemberTest findMember = memberRepository.find(savedId);
         Assertions.assertThat(findMember.getId()).isEqualTo(member.getId());
         Assertions.assertThat(findMember.getUsername()).isEqualTo(member.getUsername());
         Assertions.assertThat(findMember).isEqualTo(member); // JPA 엔티티 동일성 보장

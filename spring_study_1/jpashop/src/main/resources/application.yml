@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create # table 없으면 자동 생성
     properties:
       hibernate:
   #        show_sql: true
