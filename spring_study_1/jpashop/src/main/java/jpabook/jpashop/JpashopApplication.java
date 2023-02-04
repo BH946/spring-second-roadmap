@@ -8,9 +8,9 @@ public class JpashopApplication {
 
 	public static void main(String[] args) {
 		// lombok test => @Getter @Setter
-		Hello hello = new Hello();
-		hello.setData("hello");
-		System.out.println("data = " + hello.getData());
+//		Hello hello = new Hello();
+//		hello.setData("hello");
+//		System.out.println("data = " + hello.getData());
 
 		SpringApplication.run(JpashopApplication.class, args);
 	}

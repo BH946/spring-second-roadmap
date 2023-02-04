@@ -1,4 +1,4 @@
-package jpabook.jpashop;
+package jpabook.jpashop.test;
 
 import org.springframework.stereotype.Repository;
 
