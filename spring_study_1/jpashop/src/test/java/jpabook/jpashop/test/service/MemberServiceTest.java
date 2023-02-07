@@ -12,6 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 
+// 참고로 db를 테스트용으로 인 메모리 방식 사용
 
 // 테스트 때 기본 필요 어노테이션들
 @RunWith(SpringRunner.class) // junit 에게 스프링 테스트를 알림
