@@ -37,7 +37,7 @@ public class MemberServiceTest {
     }
 
     // 예외 발생 테스트
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void 중복_회원_예외() throws Exception {
         // given
         Member member1 = new Member();
@@ -49,6 +49,11 @@ public class MemberServiceTest {
         // when
         memberService.join(member1);
         memberService.join(member2); // 예외가 발생해야 함.
+        
+        // (expected = IllegalStateException.class) 를 선언한 덕분에
+        // 아래 코드가 위의 memberService.join(member2); 한줄만 써도 그대로 적용
+        // try { memberService.join(member2); }
+        // catch(IllegalStateException e) { return ; }
 
         // then
         Assertions.fail("예외가 발생해야 한다."); // 위에서 문제가 없으면 여기까지 온다.
