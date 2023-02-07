@@ -1,4 +1,5 @@
 package jpabook.jpashop.domain.item;
+import jpabook.jpashop.exception.NotEnoughStockException;
 import lombok.Getter;
 import lombok.Setter;
 import jpabook.jpashop.domain.Category;
@@ -19,9 +20,7 @@ public abstract class Item { // 추상 클래스
     private Long id;
 
     private String name;
-
     private int price;
-
     private int stockQuantity;
 
     // 카테고리와 다대다 관계
@@ -30,4 +29,18 @@ public abstract class Item { // 추상 클래스
     // 중간에 매핑 테이블을 하나둬서 연동시켜줍니다.
     @ManyToMany(mappedBy = "items")
     private List<Category> categories = new ArrayList<Category>();
+
+    //==비지니스 로직==// 간단히 엔티티에서 구현 가능하니까 서비스가 아닌 여기서 로직 구현하는 것(객체지향적)
+    // 재고 추가 =>
+    public void addStock(int quantity) {
+        this.stockQuantity += quantity;
+    }
+    // 재고 감소
+    public void removeStock(int quantity){
+        int restStock = this.stockQuantity - quantity;
+        if (restStock < 0) {
+            throw new NotEnoughStockException("need more stock"); // 임의 만든 예외처리 클래스
+        }
+        this.stockQuantity = restStock;
+    }
 }
