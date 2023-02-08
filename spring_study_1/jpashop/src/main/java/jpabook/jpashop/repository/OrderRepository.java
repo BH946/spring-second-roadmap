@@ -18,5 +18,6 @@ public class OrderRepository {
         return em.find(Order.class, id);
     }
 
+    // 검색기능
 //    public List<Order> findAll(OrderSearch orderSearch) { ... }
 }
