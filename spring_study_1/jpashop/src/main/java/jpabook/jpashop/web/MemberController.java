@@ -20,6 +20,10 @@ public class MemberController {
 
     private final MemberService memberService;
 
+
+    /**
+     * 회원 등록(가입) 부분
+     */
     @GetMapping(value = "/members/new")
     public String createForm(Model model) {
         // 매번 언급했지만 Model타입은 html에 데이터 담아서 보내는 용도
@@ -45,7 +49,10 @@ public class MemberController {
         return "redirect:/"; // 기본 home 페이지로 돌아감
     }
 
-    // 회원 조회 부분(GET이면 충분)
+    
+    /**
+     * 회원 조회 부분(GET이면 충분)
+     */
     // 참고로 그냥 Member 엔티티 사용했는데 실무에선 위에 MemberForm 타입처럼
     // 웹에선 웹 전용으로 따로 만들어서 꼭 사용할것!!(간단히 생각해도 이게 유지보수 좋음)
     // 현재는 그냥 예제니까 그냥 엔티티 바로 가져다 사용한것일 뿐
