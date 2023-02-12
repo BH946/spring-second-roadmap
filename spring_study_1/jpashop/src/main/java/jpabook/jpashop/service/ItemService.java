@@ -30,7 +30,7 @@ public class ItemService {
     }
 
     /**
-     * 영속성 컨텍스트가 자동 변경
+     * 영속성 엔티티로 만들었기 때문에 영속성 컨텍스트가 자동 변경
      */
 //    @Transactional
 //    public void updateItem(Long id, String name, int price, int stockQuantity){

@@ -7,13 +7,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create # table 없으면 자동 생성
+      ddl-auto: create # 앱 실행 시점에 table drop 이후에 table 없으면 자동 생성
     properties:
       hibernate:
-  #        show_sql: true
+  #        show_sql: true # System.out에 하이버네이트 실행 SQL을 남긴다.
         format_sql: true
 
 logging.level:
-  org.hibernate.SQL: debug
+  org.hibernate.SQL: debug # org.hibernate.SQL 옵션은 logger를 통해 하이버네이트 실행 SQL을 남긴다.
   org.hibernate.type: trace #??? ?? 2.x, hibernate5 => sql ?,? ?? ??? ?? ???!
 #  org.hibernate.orm.jdbc.bind: trace #??? ?? 3.x, hibernate6

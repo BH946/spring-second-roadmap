@@ -45,7 +45,7 @@ public abstract class Item { // 추상 클래스
     }
 
 
-    // 준속성 엔티티 -> 영속성 엔티티 에 사용
+    // updateItem에 사용(setter를 남발하지 않기 위함)
     public void change(String name, int price, int stockQuantity) {
         this.name = name;
         this.price = price;

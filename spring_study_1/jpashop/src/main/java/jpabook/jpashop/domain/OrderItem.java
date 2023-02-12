@@ -1,11 +1,14 @@
 package jpabook.jpashop.domain;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jpabook.jpashop.domain.item.Item;
 import javax.persistence.*;
 @Entity
 @Table(name = "order_item") // abc_def 형태로 테이블명 하는중이므로 여기서도 테이블명 변경
 @Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderItem {
 
     @Id @GeneratedValue
