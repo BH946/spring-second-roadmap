@@ -1,0 +1,50 @@
+package jpabook.jpashop.domain;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import jpabook.jpashop.domain.item.Item;
+import javax.persistence.*;
+@Entity
+@Table(name = "order_item") // abc_def 형태로 테이블명 하는중이므로 여기서도 테이블명 변경
+@Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class OrderItem {
+
+    @Id @GeneratedValue
+    @Column(name = "order_item_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY) // 꼭 LAZY, 다대일&단방향
+    @JoinColumn(name = "item_id") // 얘가 주인이라서 FK
+    private Item item;      //주문 상품
+
+    @ManyToOne(fetch = FetchType.LAZY) // 꼭 LAZY, 다대일&양방향
+    @JoinColumn(name = "order_id") // 얘가 주인이라서 FK
+    private Order order;    //주문
+
+    private int orderPrice; //주문 가격
+    private int count;      //주문 수량
+
+    //==생성 메서드==//
+    public static OrderItem createOrderItem(Item item, int orderPrice, int count) {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setItem(item);
+        orderItem.setOrderPrice(orderPrice);
+        orderItem.setCount(count);
+        item.removeStock(count); // 주문한 상품이니까 기존 재고수는 count만큼 감소
+        return orderItem;
+    }
+    //==비즈니스 로직==//
+    /** 주문 취소 */
+    public void cancel() {
+        getItem().addStock(count); // 주문 상품 취소했으니 기존 재고수는 count만큼 증가
+    }
+    
+    //==조회 로직==//
+    /** 주문상품 전체 가격 조회 */
+    public int getTotalPrice() {
+        return getOrderPrice() * getCount(); // 가격 * 수량 = 주문상품 가격
+    }
+
+}
