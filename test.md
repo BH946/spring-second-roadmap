@@ -22,23 +22,41 @@ typora-root-url: ../../..
 
 * **[특정 옵션이 포함된 자동차 리스트 구하기](https://school.programmers.co.kr/learn/courses/30/lessons/157343)**
 
-
+<br>
 
 ### 코드
 
 ```mysql
-
+SELECT * from CAR_RENTAL_COMPANY_CAR where options like '%네비게이션%' order by car_id desc;
 ```
 
 <br>
 
 ### 풀이
 
-ㄴㅇㅁㄹ
+options 필드 값은 리스트로 여러값이 출력되므로 `options like '%네비게이션%'` 형태로 양쪽에 '%' 가 필수!
 
-<b>
+또한, 내림차순이므로 `order by car_id desc` 형태로 뒤에 꼭 'desc' 가 필수!(기본값 : asc)
+
+<br>
+
+<br>
 
 
 ## 문제 2
 
-...
+ㄴㄹㅇㄴㄹㄴ
+
+<br>
+
+가낟라ㅏ마
+
+<br>
+
+<br>
+
+akqktkdk
+
+<br><br>
+
+이ㅏ아아
