@@ -4,7 +4,7 @@
 
 * 인프런 강의 듣고 공부한 내용입니다.
 
-
+<br>
 
 해당 프로젝트 폴더는 강의를 수강 후 강의에서 진행한 프로젝트를 직접 따라 작성했습니다.
 
@@ -14,7 +14,7 @@
 
 * 자세한 코드가 궁금하다면, 올려둔 프로젝트에서 코드확인
 
-<br>
+<br><br>
 
 ## 프로젝트 환경설정 & 생성
 
@@ -23,7 +23,7 @@
 * Java 11
 * IDE: IntelliJ (이클립스도 가능합니다)
 
-
+<br>
 
 **스프링 프로젝트 생성**
 
@@ -37,7 +37,7 @@
 * 참고로  `2.7.1 (SNAPSHOT)` 이런 형태가 아닌 `2.7.0` 처럼 영어가 안 붙은걸 선택 권장
 * 이후에 **gereater the project로 다운 -> IntelliJ로 폴더 오픈**
 
-
+<br>
 
 **추가 설정**
 
@@ -70,13 +70,13 @@
     * Preferences -> Annotation Processors 검색 -> Enable annotation processing 체크 (재시작)
   * 테스트 : @Getter, @Setter 확인
 
-
+<br>
 
 **단축키 확인 법**
 
 * File -> Settings -> keymap 에서 검색해서 확인
 
-
+<br>
 
 **참고**
 
@@ -86,13 +86,13 @@
 - `External 라이브러리` 폴더 보면 엄청많이 라이브러리들을 끌어온걸 볼 수 있음
 - `test코드` 에 아무 함수적어서 그냥 실행만 시켜보면? 프로젝트가 잘 구동되고 있는걸 알 수 있음
 
-<br>
+<br><br>
 
 ## H2 DB & 본섭, 테섭DB
 
 **MySql 도 있고 다른 DB들도 있지만 H2는 간단히 테스트, 개발하기 좋다고 해서 이것을 사용하게되었다.**
 
-
+<br>
 
 ### H2 DB 생성
 
@@ -101,14 +101,14 @@
 * **H2 DB를 생성하기 위해선 맨처음에 JDBC URL을 파일모드로 연결 해야한다.**
 * **또한 크롬에 url란에 session값들도 있는데 이 또한 최초에는 건드리면 안됨(인증 위함)**
 
-
+<br>
 
 <img src=".\images\image-20230212110926194.png" alt="image-20230212110926194" style="zoom:80%;" /> 
 
 * **최초 DB 생성 이후부터는 tcp로 네트워크 모드로 연결(접속)한다.**
 * **이때 부터는 네트워크 모드로 어디서든 접근 가능(h2 서버만 구동해둔 상태라면)**
 
-
+<br>
 
 ### H2 DB 설정(spring 연동)
 
@@ -116,7 +116,7 @@
 
 * yml 파일은 들여쓰기가 띄어쓰기 2칸씩이므로 꼭 이를 지켜줄것
 
-
+<br>
 
 <img src=".\images\image-20230212111505705.png" alt="image-20230212111505705" style="zoom:80%;" /> 
 
@@ -127,7 +127,7 @@
 * `org.hibernate.SQL` 옵션은 logger를 통해 하이버네이트 실행 SQL을 남긴다.
 * `org.hibernate.type: trace` 옵션은 ??? 로 나오는 쿼리 파라미터 로그를 실제 적용한 값으로 남겨줌
 
-
+<br>
 
 ### 테섭DB
 
@@ -136,7 +136,7 @@
 **테스트는 케이스가 격리된 환경에서 실행하고, 끝나면 데이터를 초기화 하는것이 좋다. 그런면에서 메모리** 
 **DB를 사용하는 것이 가장 이상적이다.**
 
-
+<br>
 
 **방법은 정말 간단하다.**
 
@@ -144,7 +144,7 @@
   * 참고로 sql 로그는 보기위해서 `loggin.leve: ...` 관련 코드는 주석처리 하지 않았다.
 * 테스트 코드 실행시 이 위치의 설정 파일을 먼저 읽기 때문에 `datasource` 설정이 없으면 메모리 DB를 자동으로 사용한다.
 
-<br>
+<br><br>
 
 ## 도메인 분석 설계
 
@@ -154,7 +154,7 @@
 
 <img src=".\images\image-20230212121843695.png" alt="image-20230212121843695" style="zoom:80%;" /> 
 
-
+<br>
 
 **기능 목록**
 
@@ -175,7 +175,7 @@
   * 상품을카테고리로 구분할수 있다.
   * 상품주문시 배송정보를입력할수있다.
 
-
+<br>
 
 ### 도메인 모델과 테이블 설계(중요)
 
@@ -186,7 +186,7 @@
 * **카테고리와 상품(물품) 엔티티의 관계도 N:N 관계인데, 이것도 결국 1:N, N:1 관계로 풀어내야한다.**
   * 이 또한, 중간에 매핑 테이블을 연결해서 풀어낸다.
 
-
+<br>
 
 <img src=".\images\image-20230212143202478.png" alt="image-20230212143202478"  /> 
 
@@ -194,7 +194,7 @@
   * 참고로 Member -> Order로 참조를 실제로 할일은 없고 Order->Member 로 참조하는것으로 충분
   * 그러나 여기서는 일대다, 다대일의 양방향 연관관계를 설명하기 위해서 추가했음
 
-
+<br>
 
 <img src=".\images\image-20230212144252914.png" alt="image-20230212144252914"  />  
 
@@ -204,7 +204,7 @@
   * 상품 - 앨범, 도서, 영화 타입을통합해서 하나의테이블로 만들었다. DTYPE 컬럼으로타입을 구분한다.
   * Address, Album Book Movie 는 엔티티에 합쳐졌다는 점
 
-
+<br>
 
 **연관관계 매핑 분석(중요)**
 
@@ -231,7 +231,7 @@
   * 마지막으로 '다대다' 의 관계의 경우 무조건 풀어서('일대다','다대일') 사용해야한다.
     * '다대다' 이상태로는 실무에서 절대 사용하면 안된다.
 
-
+<br>
 
 ### 엔티티 클래스 개발
 
@@ -245,7 +245,7 @@
 * 하지만 Setter는 문제가다르다. Setter를 호출하면 데이터가 변한다. Setter를 막열어두면 가까운미래에 엔티티에 가도 대체 왜 변경되는지 추적하기 점점 힘들어진다. 
 * 그래서 엔티티를 변경할때는 Setter 대신에 변경지점이 명확하도록 변경을 위한 비즈니스 메서드를 별도로 제공해야 한다.
 
-
+<br>
 
 **회원 엔티티(Member.java)**
 
@@ -272,7 +272,7 @@ public class Member {
   그리고 테이블은 관례상 테이블명 + id 를많이사용한다. 참고로객체에서 id 대신에 memberId 를 
   사용해도 된다. 중요한것은 일관성이다.
 
-
+<br>
 
 **주소 타입(Address.java)**
 
@@ -299,7 +299,7 @@ public class Address {
 * 값 타입은 당연히 변경 불가능하게 설계해야해서 @Setter는 안쓰고, 생성자로 초기화 후 변경 불가능하게 만들자.
 * 참고로 @Embeddable 특성상 자바 기본 생성자는 `public or protected` 로 설정해놔야 해서 `protected` 가 좀 더 안전하니까 이걸로 설정한 것
 
-
+<br>
 
 **주문 엔티티(Order.java)**
 
@@ -343,13 +343,13 @@ public class Order {
   }
   ```
 
-
+<br>
 
 **주문상품 엔티티(OrderItem.java)**
 
 * 그림에 맞게 쭉 계속 생성
 
-
+<br>
 
 **상품 엔티티(Item.java)**
 
@@ -377,9 +377,8 @@ public class Order {
   private List<Category> categories = new ArrayList<Category>();
   ```
 
-  
 
-
+<br>
 
 **배송 엔티티(Delivery.java)**
 
@@ -391,7 +390,7 @@ public class Order {
   }
   ```
 
-
+<br>
 
 **카테고리 엔티티(Category.java)**
 
@@ -409,9 +408,7 @@ private List<Item> items = new ArrayList<>();
 * 해결 방안으로 중간 엔티티( CategoryItem )를 만들고 `@ManyToOne , @OneToMany` 로 매핑해서 사용하자. 
 * 정리하면 "다대다" 매핑을 ''일대다, 다대일'' 매핑으로 풀어내서 사용하자.
 
-
-
-
+<br>
 
 ### 엔티티 설계시 주의점
 
@@ -423,7 +420,7 @@ private List<Item> items = new ArrayList<>();
 
 * 나중에 리펙토링으로 Setter 들은 제거하길 바람
 
-
+<br>
 
 <img src=".\images\image-20230212165258592.png" alt="image-20230212165258592"  /> <img src=".\images\image-20230212165326225.png" alt="image-20230212165326225"  />
 
@@ -433,14 +430,14 @@ private List<Item> items = new ArrayList<>();
 * null 문제에서 안전하다고 한다.(정확히 이해하지는 못했음)
 * 코드도 간결해진다고 한다.(이것은 당연)
 
-
+<br>
 
 <img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\spring_second_roadmap\spring_study_1\jpashop\images\image-20230212165545520.png" alt="image-20230212165545520" style="zoom:80%;" /> 
 
 * 스프링부트에 `SpringPhysicalNamingStrategy`가 있어서 이렇게 테이블, 컬럼명이 자동으로 생성된다.
 * `orderDate`로 필드 선언만 했는데, 해당 필드명으로 테이블에 컬럼 이름이 `order_date`로 자동 설정
 
-
+<br>
 
 **모든 연관관계는 지연로딩으로 설정(LAZY)!**
 
@@ -448,13 +445,13 @@ private List<Item> items = new ArrayList<>();
 * N+1 문제란? 
 * **@XToOne(OneToOne, ManyToOne) 관계는 기본이 즉시로딩이므로 직접 지연로딩으로 설정해야 한다.**
 
-
+<br>
 
 ### 추가) 엔티티에 추가한 로직들
 
 **참고: 스프링필드 주입대신에 생성자 주입을 사용하자.**
 
-
+<br>
 
 **연관관계 메서드**
 
@@ -465,7 +462,7 @@ private List<Item> items = new ArrayList<>();
 * 맨위 코드를 아래 코드처럼 짜면 한줄로 줄여진다는 것
 * 다른 엔티티들에도 있으니까 프로젝트에 코드 참고
 
-
+<br>
 
 **비지니스 로직**
 
@@ -473,7 +470,7 @@ private List<Item> items = new ArrayList<>();
   => 이것이 좀 더 객체지향적인 것.
 - 자세한 코드들은 프로젝트에서 참고
 
-
+<br>
 
 **생성 메서드**
 
@@ -490,13 +487,13 @@ private List<Item> items = new ArrayList<>();
 
     생성 메서드로 생성하길 원하는데 위처럼 new로 엔티티 바로 생성하는걸 막을 수 있음
 
-
+<br>
 
 **조회 로직**
 
 - 예로 전체 주문 가격 조회 함수 개발!
 
-<br>
+<br><br>
 
 ## 애플리케이션 구현 준비
 
@@ -512,7 +509,7 @@ private List<Item> items = new ArrayList<>();
 * **컨트롤러**는 웹 계층에서 활용!!! 웹 계층과 상호작용!!!
 * 보통 본인은 이렇게 기본적으로 생각하고 개발을 하는 편이다.
 
-<br>
+<br><br>
 
 ## 회원 도메인 개발
 
@@ -521,7 +518,7 @@ private List<Item> items = new ArrayList<>();
 * 회원 등록 
 * 회원 목록 조회
 
-
+<br>
 
 **순서**
 
@@ -530,7 +527,7 @@ private List<Item> items = new ArrayList<>();
 * 회원 서비스 개발 
 * 회원 기능 테스트 
 
-
+<br>
 
 ### 회원 리포지토리 개발
 
@@ -542,7 +539,7 @@ private List<Item> items = new ArrayList<>();
   * **sql 은 테이블에 쿼리하는 개념**
   * **jpql 은 엔티티 객체를 대상으로 쿼리하는 개념**
 
-
+<br>
 
 ### 회원 서비스 개발
 
@@ -572,7 +569,7 @@ private List<Item> items = new ArrayList<>();
     }
     ```
 
-
+<br>
 
 ### 회원 기능 테스트
 
@@ -580,14 +577,14 @@ private List<Item> items = new ArrayList<>();
 
 * **live template을 설정에서 검색해서 macro - tdd 도 만들어 뒀다!(간단한 테스트 로직 작성해줌)**
 
-
+<br>
 
 **테스트 요구사항** 
 
 * 회원가입을 성공해야 한다.
 * 회원가입 할때같은 이름이 있으면 예외가 발생 해야한다
 
-
+<br>
 
 ```java
 @RunWith(SpringRunner.class) 
@@ -635,11 +632,11 @@ public class MemberServiceTest {
     - @Autowired EntityManager em을 하나 추가로 선언하고 **em.flush()** 함수를 사용하면 된다.
     - 왜냐하면 위에서 insert문이 안찍힌 정확한 이유는 **영속성 컨텍스트 플러시를 안한것이기 때문**이라고 한다. => 이해 안된다면, 마지막에 더티체크 같은 이야기가 나올텐데 그부분을 참고
 
-<br>
+<br><br>
 
 ## 상품 도메인 개발
 
-
+<br>
 
 ### 상품 엔티티 개발(비지니스 로직 추가)
 
@@ -657,7 +654,7 @@ public class MemberServiceTest {
 * 상품 기능 테스트
   * 참고 : 여기서는 테스트 코드 생략(이전과 비슷해서)
 
-
+<br>
 
 ### 상품 엔티티 개발(비지니스 로직 추가)
 
@@ -666,7 +663,7 @@ public class MemberServiceTest {
 
 * 재고 증가, 감소 함수를 만들 수 있다.
 
-
+<br>
 
 ### 상품 리포지토리 개발
 
@@ -675,7 +672,7 @@ public class MemberServiceTest {
   * id 가있으면 이미 데이터베이스에 저장된 엔티티를 수정한다고 보고, merge() 를 실행, 자세한 내용은 맨 마지막에 설명(지금은 업데이트 한다고만 이해)
 * findOne, findAll 
 
-
+<br>
 
 ### 상품 서비스 개발
 
@@ -683,7 +680,7 @@ public class MemberServiceTest {
 
 * save, find
 
-<br>
+<br><br>
 
 ## 주문 도메인 개발
 
@@ -703,7 +700,7 @@ public class MemberServiceTest {
 * 주문 기능 테스트
 * 주문 검색 기능 개발
 
-
+<br>
 
 ### 주문, 주문상품 엔티티 개발
 
@@ -725,13 +722,13 @@ public class MemberServiceTest {
 - **`주문상품` 엔티티에 조회 로직 개발!**
   - 상품 수량과 가격을 곱한 가격 반환 함수개발!
 
-
+<br>
 
 ### 주문 리포지토리 개발
 
 **생략**
 
-
+<br>
 
 ### 주문 서비스 개발
 
@@ -744,7 +741,7 @@ public class MemberServiceTest {
   * 이것은 일반적인 SQL을 썻을때 패턴
 * **참고로, 해당 개발부분의 문맥에 맞춰서 적절한 패턴적용을 해주면 된다고함.**
 
-
+<br>
 
 ### 주문 기능 테스트
 
@@ -752,7 +749,7 @@ public class MemberServiceTest {
 
 * private으로 클래스내에 그냥 함수 이쁘게 만드는 단축키는 CTRL+ALT+M
 
-
+<br>
 
 ### 주문 검색 기능 개발(중요)
 
@@ -772,7 +769,7 @@ public class MemberServiceTest {
   * Querydsl 강의가 따로 있으므로 추후에 공부하고 적용시켜 보자.
 * 참고로 2번째 방법으로 프로젝트에는 코드 적용되어있다.
 
-<br>
+<br><br>
 
 ## 웹 계층 개발
 
@@ -780,7 +777,7 @@ public class MemberServiceTest {
 
 <img src=".\images\image-20230212182944110.png" alt="image-20230212182944110" style="zoom:80%;" />
 
-
+<br>
 
 ```java
 @Controller
@@ -798,7 +795,7 @@ public class HomeController {
 * **웹 관련해서는 [MVC](https://github.com/BH946/spring_first_roadmap/tree/main/spring_study_1) 게시글 참고**
   * **여기서는 못보던 내용들만 정리**
 
-
+<br>
 
 **Bootstrap 에서 css들 다운**
 
@@ -806,7 +803,7 @@ public class HomeController {
 - 혹시 바로 적용안되면 강제로 다 빌드 또는 Synchorinze
 - 참고로 css 한개 임의로 더 만들어서 적용했음
 
-
+<br>
 
 ### 회원 등록, 목록 조회
 
@@ -823,7 +820,7 @@ public class HomeController {
     * 이때 return을 다시 html로 보내고, html에서 \#fileds.hasErros 를 통해서 에러감지한 result를 사용!!
     * @NotEmpty("에러 메세지 관련")을 name에 적용했었는데 name값이 "에러 메세지 관련" 으로 바뀌면서 해당 name 값을 출력해서 메시지를 보여줄 수 있었던 것.
 
-
+<br>
 
 **목록 조회**
 
@@ -836,7 +833,7 @@ public class HomeController {
   * 다행인건 템플릿엔진은 서버사이드에서 진행되기 때문에 가져다 사용해도 상관은없는것!
   * 물론 권장하는건 엔티티를 바로 사용하기보단 가공해서 사용하는걸 권장
 
-
+<br>
 
 ### 상품 등록, 목록 조회, 수정
 
@@ -844,13 +841,13 @@ public class HomeController {
 
 <img src=".\images\image-20230212183249151.png" alt="image-20230212183249151" style="zoom:80%;" /> 
 
-
+<br>
 
 **목록 조회**
 
 <img src=".\images\image-20230212183327898.png" alt="image-20230212183327898" style="zoom:80%;" /> 
 
-
+<br>
 
 **상품 수정(상품 등록 폼과 동일)**
 
@@ -863,7 +860,7 @@ public class HomeController {
 *  @ModelAttribute("from")
   * model.addAttribute 에도 담기고, form서밋 때 html에 있는 form 데이터를 매핑해서 변수에 담아줄거임
 
-
+<br>
 
 ### 상품 주문, 주문 목록(검색, 취소)
 
@@ -874,7 +871,7 @@ public class HomeController {
 * @RequestParam 은 form 서밋 방식
   * 예를들어 form에 select태그들 name속성이름으로 값 매핑해서 가져와줌!
 
-
+<br>
 
 **주문 목록(검색, 취소)**
 
@@ -883,7 +880,7 @@ public class HomeController {
 * 자바스크립트 코드도 호출해서 사용
 * `<script>` 문으로 작성했으며 post 방식으로 cancel을 전달했음
 
-<br>
+<br><br>
 
 ## 웹 계층에서 사용한 th문법
 
@@ -901,7 +898,7 @@ public class HomeController {
 - ${#fileds.hasErros('name')} 을 통해서 에러 감지 가능(컨트롤러에서 if(result.hasErrors()){} 형태로 코드짜서 에러가 BindingResult result에 담겨있는데, 이걸 html에서 fileds가 result값 가져와서 사용가능
 - `<tr th:each="member : ${members}">` 같이 for each같은 문법도 존재
 
-<br>
+<br><br>
 
 ## 중요 개념 : 변경 감지와 병합(merge)
 
@@ -920,7 +917,7 @@ public class HomeController {
 * 이렇게 임의로 만들어낸 엔티티도 기존 식별자를 가지고 있으면 준영속 엔티티로 볼 수 있다.
 * 다만 이 준영속 엔티티가 saveItem(book)을 타고 들어가보면 merge함수 사용해서 해결한 상태임!
 
-
+<br>
 
 **준영속 엔티티를 수정하는 2가지방법** 
 
@@ -948,7 +945,7 @@ public class HomeController {
 
     * 따라서 이곳에 merge(item)의 item은 당연히 아직 준영속 엔티티고 이 merge가 반환한 Item merge 이 변수가 영속성 엔티티로 봐야하기 때문에 뒤에 더 update할게 있으면 이 변수를 활용해줘야한다.
 
-
+<br>
 
 **merge 사용시 꼭꼭 주의할점!!**
 
@@ -959,9 +956,7 @@ public class HomeController {
 - 매우매우 위험.
 - 따라서 강사님은 더티체크를 추천
 
-
-
-
+<br>
 
 **결론적으로 최종 추천 코드**
 
@@ -1020,7 +1015,7 @@ public void updateItem(Long id, UpdateItemDto itemDto){
 
   * change 함수의 구조(Item 엔티티에 정의)
 
-<br>
+<br><br>
 
 ## 마무리
 
