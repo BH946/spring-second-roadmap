@@ -4,6 +4,7 @@
 
 * 인프런 강의 듣고 공부한 내용입니다.
 * 단리ㅏㅓㄴ단츅키는 어디에 기록주ㅠㅇㅇ인가나난ㄴㄴㄴ alt+insert대박
+* 알아뱌뱌어ㅏㅣㄹ우자ㅓㅇ루ㅏㅣㄴㅇㅇ
 
 <br>
 
@@ -58,3 +59,19 @@ JPA에서 DTO로 바로 조회 V4~...
 
 
 OSLI>?? 이후 정리해야함.ㅎ늘.,느.
+
+
+
+```
+List<OrderItem> orderItems = order.getOrderItems();
+orderItems.stream().forEach(o -> o.getItem().getName()); // Lazy 강제 초기화
+```
+
+처럼 하는거랑, 또 다른 방식 stream이거 하는거 둘다 정리.
+
+```
+.collect(Collectors.toList());
+
+.getResultList(); => 쿼리문에 보면 있윰
+```
+
