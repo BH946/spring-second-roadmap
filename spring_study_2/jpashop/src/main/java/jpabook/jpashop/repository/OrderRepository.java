@@ -84,4 +84,17 @@ public class OrderRepository {
                 .getResultList();
     }
 
+    // ToOne관계는 모두 페치조인한다.
+    // 컬렉션 엔티티 조회만 지연 로딩으로 조회한다. 
+    // => 하이버네이트 size 설정 사용( 프록시 객체를 size만큼 IN 쿼리로 조회 해줌 )
+    // => 당연히 여기서 프록시 객체는 orderitems가 되는것
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery(
+                        "select o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset) // 페이징
+                .setMaxResults(limit) // 페이징 끝
+                .getResultList();
+    }
 }

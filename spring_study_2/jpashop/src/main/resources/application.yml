@@ -13,6 +13,7 @@ spring:
       hibernate:
   #        show_sql: true # System.out에 하이버네이트 실행 SQL을 남긴다.
         format_sql: true
+        default_batch_fetch_size: 100 # 페이징 효과 (프록시 객체를 size만큼 IN쿼리로 조회 기능)
 
 logging.level:
   org.hibernate.SQL: debug # org.hibernate.SQL 옵션은 logger를 통해 하이버네이트 실행 SQL을 남긴다.
