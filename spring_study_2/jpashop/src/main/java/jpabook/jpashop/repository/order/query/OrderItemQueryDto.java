@@ -2,8 +2,9 @@ package jpabook.jpashop.repository.order.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Data
+@Data @EqualsAndHashCode(of = "orderId") // 그룹핑 기준
 public class OrderItemQueryDto {
 
     @JsonIgnore

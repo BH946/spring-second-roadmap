@@ -6,12 +6,17 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
 public class OrderQueryRepository {
 
     private final EntityManager em;
+
+    // OrderQueryDto => Order 관련 DTO
+    // OrderItemQueryDto => OrderItem 관련 DTO
 
     /**
      * 컬렉션은 별도로 조회
@@ -54,6 +59,61 @@ public class OrderQueryRepository {
                         " join oi.item i" +
                         " where oi.order.id = : orderId", OrderItemQueryDto.class)
                 .setParameter("orderId", orderId)
+                .getResultList();
+    }
+
+
+
+    /**
+     * 최적화
+     * Query: 루트 1번, 컬렉션 1번
+     * 데이터를 한꺼번에 처리할 때 많이 사용하는 방식
+     *
+     */
+    public List<OrderQueryDto> findAllByDto_optimization() {
+        //루트 조회(toOne 코드를 모두 한번에 조회) => 쿼리 한방
+        List<OrderQueryDto> result = findOrders();
+        //orderItem 컬렉션을 MAP 한방에 조회 => 쿼리 한방(여기서 toOrderIds() 함수 같이 사용)
+        Map<Long, List<OrderItemQueryDto>> orderItemMap = findOrderItemMap(toOrderIds(result));
+
+        //루프를 돌면서 컬렉션 추가(추가 쿼리 실행X) => 이미 OrderItem 구해왔으므로 기존 result 값에 추가
+        result.forEach(o -> o.setOrderItems(orderItemMap.get(o.getOrderId())));
+        return result;
+    }
+
+    // 해당 함수로 메모리에 orderIds를 기록해서 사용!
+    private List<Long> toOrderIds(List<OrderQueryDto> result) {
+        return result.stream()
+                .map(o -> o.getOrderId())
+                .collect(Collectors.toList());
+    }
+
+    // orderIds를 in쿼리를 통해서 orderitem 데이터도 다 가져오는것.
+    private Map<Long, List<OrderItemQueryDto>> findOrderItemMap(List<Long> orderIds) {
+        List<OrderItemQueryDto> orderItems = em.createQuery(
+                        "select new" +
+                        " jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name, oi.orderPrice, oi.count)" +
+                        " from OrderItem oi" +
+                                " join oi.item i" +
+                                " where oi.order.id in :orderIds", OrderItemQueryDto.class)
+                .setParameter("orderIds", orderIds)
+                .getResultList();
+        return orderItems.stream()
+                .collect(Collectors.groupingBy(OrderItemQueryDto::getOrderId)); // 그룹핑 기준점 DTO클래스에 선언
+    }
+
+
+
+    public List<OrderFlatDto> findAllByDto_flat() {
+        return em.createQuery(
+                        "select new" +
+                        " jpabook.jpashop.repository.order.query.OrderFlatDto(o.id, m.name, o.orderDate,"+
+                                " o.status, d.address, i.name, oi.orderPrice, oi.count)" +
+                        " from Order o" +
+                                " join o.member m" +
+                                " join o.delivery d" +
+                                " join o.orderItems oi" +
+                                " join oi.item i", OrderFlatDto.class)
                 .getResultList();
     }
 }
