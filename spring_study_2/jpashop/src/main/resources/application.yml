@@ -7,8 +7,8 @@ spring:
 
   jpa:
     hibernate:
-#      ddl-auto: create # 앱 실행 시점에 table drop 이후에 table 없으면 자동 생성
-      ddl-auto: none # none
+      ddl-auto: create # 앱 실행 시점에 table drop 이후에 table 없으면 자동 생성
+#      ddl-auto: none # none
     properties:
       hibernate:
   #        show_sql: true # System.out에 하이버네이트 실행 SQL을 남긴다.
