@@ -1,4 +1,5 @@
 package jpabook.jpashop.domain;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class OrderItem {
     @JoinColumn(name = "item_id") // 얘가 주인이라서 FK
     private Item item;      //주문 상품
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY) // 꼭 LAZY, 다대일&양방향
     @JoinColumn(name = "order_id") // 얘가 주인이라서 FK
     private Order order;    //주문
