@@ -1,4 +1,4 @@
-package jpabook.jpashop.web;
+package jpabook.jpashop.controller;
 
 
 // 웹계층 개발 시작
