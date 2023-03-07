@@ -70,8 +70,8 @@ public class MemberApiController {
      * 사용했는데, PUT은 전체 업데이트를 할때 사용하는 것이 맞다. 부분 업데이트를 하려면 PATCH를
      * 사용하거나 POST를 사용하는것이 REST 스타일에 맞다.
      */
-//    @PutMapping("/api/v2/members/{id}") // 수정은 PUT 사용
-    @PostMapping("/api/v2/members/{id}") // 수정은 PUT 사용
+//    @PutMapping("/api/v2/members/{id}") // 전체 수정은 PUT 사용
+    @PostMapping("/api/v2/members/{id}") // 부분 수정은 POST 사용
     public UpdateMemberResponse updateMemberV2(@PathVariable("id") Long id,
                                                @RequestBody @Valid UpdateMemberRequest request) {
         memberService.update(id, request.getName()); // update함수 새로 개발(변경감지를사용해서 데이터를수정)
@@ -112,16 +112,16 @@ public class MemberApiController {
 
     /**
      * 조회 V2: 응답 값으로 엔티티가 아닌 별도의 DTO를 반환한다.
-     * 또한 어레이가 아닌 오브젝트에 어레이를 담아서 json 반환!
+     * 또한 어레이가 아닌 오브젝트(예로 result클래스)에 어레이를 담아서 json 반환!
      */
     @GetMapping("/api/v2/members")
     public Result membersV2() {
         List<Member> findMembers = memberService.findMembers();
         //엔티티 -> DTO 변환
-        List<MemberDto> collect = findMembers.stream() // stream으로 풀기
+        List<MemberDto> result = findMembers.stream() // stream으로 풀기
                 .map(m -> new MemberDto(m.getName()))
                 .collect(Collectors.toList());
-        return new Result(collect);
+        return new Result(result);
     }
 
     @Data
