@@ -1,4 +1,4 @@
-## Intro..
+# Intro..
 
 **실전! 스프링 부트와 JPA 활용2 - API 개발과 성능 최적화**
 
@@ -28,15 +28,15 @@
 
 <br><br>
 
-## API 개발 고급편 정리
+# API 개발 고급편 정리
 
 **이번 강의에서는 OSIV와 성능 최적화 와 이것(=API 개발 고급 정리) 이 핵심이다!!**    
 
 **따라서 전체적 흐름은 간략히 소개할 것이며, 자세한건 프로젝트에서 코드를 볼 것!!**
 
-<br>
+<br><br>
 
-### 조회의 2가지 방법!!
+## 조회의 2가지 방법!!
 
 * **엔티티 조회**
   * 엔티티를 조회 해서 그대로 반환: V1
@@ -58,9 +58,9 @@
   * 컬렉션 조회 최적화 - 일대다 관계인 컬렉션은 IN 절을 활용해서 메모리에 미리 조회해서 최적화: V5 
   * 플랫 데이터 최적화 - JOIN 결과를 그대로 조회후 애플리케이션에서 원하는 모양으로 직접 변환: V6
 
-<br>
+<br><br>
 
-### 권장 순서
+## 권장 순서
 
 1.  **엔티티 조회** 방식으로 우선접근
     1.  페치조인으로 쿼리 수를 최적화
@@ -99,9 +99,9 @@
   * 실무에서는 이정도 데이터면 수백이나, 수천건 단위로 페이징 처리가 꼭 필요하므로, 이경우 선택하기 어려운 방법이다.  
     그리고 데이터가 많으면 중복 전송이 증가해서 V5와 비교해서 성능 차이도미비하다.
 
-<br>
+<br><br>
 
-### 페이징 불가능? 1+N? 컬렉션 최적화?
+## 페이징 불가능? 1+N? 컬렉션 최적화?
 
 **어떤 문제들인지 하나하나 설명하겠다.**
 
@@ -136,7 +136,7 @@
 
 <br><br>
 
-## OSIV와 성능 최적화
+# OSIV와 성능 최적화
 
 이거랑 아래 전체 흐름 정리하면 된다..
 
@@ -148,7 +148,421 @@
 
 <br><br>
 
-## 전체흐름
+# API 개발 과정
+
+**'JPA 활용 1편' 에서는 간단히 웹을 만들고, DB를 연동해보는 그런 과정을 진행해보았다.**  
+
+**'JPA 활용 2편' 에서는 API를 개발해보려고 한다.  
+어찌보면 1편에서 개발한 Controller 부분들이 이번 API 개발하는 부분과 유사함을 느끼고 조금 햇갈릴 수 있을것이므로 의문점을 먼저 해결해보자.**
+
+* `@Controller, @RestController` 의 동작 방식을 이해하면 된다.
+  * @Controller - View 반환
+  * @Controller + @ResponseBody - Data 반환
+  * @RestController - Data 반환
+* `@Controller + @ResponseBody = @RestController` 이다.
+* 요즘 API스펙에서는 JSON으로 반환을 많이 하며, 예전에는 XML형태로 반환을 많이 했었다.
+
+<br>
+
+**< 일반적인 Spring MVC 처리과정 >**
+
+<img src=".\images\image-20230307212046867.png" alt="image-20230307212046867"  /> 
+
+<br>
+
+**< Controller로 View 반환 >**
+
+<img src=".\images\image-20230307212319945.png" alt="image-20230307212319945"  /> 
+
+<br>
+
+**< Controller로 Data 반환 - @ResponseBody 추가 사용 >**
+
+<img src=".\images\image-20230307212147895.png" alt="image-20230307212147895"  /> 
+
+<br>
+
+**< RestController로 Data 반환 >**
+
+<img src=".\images\image-20230307212413682.png" alt="image-20230307212413682"  /> 
+
+<br>
+
+**API를 개발하는 과정을 소개하려고 한다.**
+
+1. API 개발 기본 - CRUD
+2. API 개발 고급 - 지연 로딩(LAZY)과 조회 성능 최적화
+3. API 개발 고급 - 컬렉션 조회 최적화
+4. API 개발 고급 - 실무 필수 최적화
+
+<br><br>
+
+## API 개발 기본 - CRUD
+
+**가장 기본이되는 CRUD 형태를 먼저 개발을 해보자.**
+
+**`api` 패키지를 추가해서 구분지어주고, 하위에 `MemberApiController.java` 를 개발해주자.**
+
+<br>
+
+### 회원 등록 API
+
+**등록 V1: 요청 값(RequestBody)으로 Member 엔티티를 직접 받는다.**
+
+```java
+@PostMapping("/api/v1/members")
+public CreateMemberResponse saveMemberV1(@RequestBody @Valid Member member) {
+    Long id = memberService.join(member); // 회원 등록
+    return new CreateMemberResponse(id);
+}
+```
+
+* **`@RequestBody @Valid Member member`**
+
+  * `@RequestBody` 의 역할은 Json얻은걸 Member 객체로 알아서 매핑
+
+  * `@Valid` 하는 이유는 `@NotEmpty` 쓰려고!! 없이 하면 Null로 그냥 호출이 다 가니깐!
+
+    ```java
+    @NotEmpty(message = "회원 이름은 필수 입니다") // Null 대신 해당 메시지 출력
+    ```
+
+* **문제점**
+
+  * 엔티티에 프레젠테이션 계층을 위한 로직이 추가된다.
+  * 엔티티에 API 검증을 위한 로직이 들어간다. (@NotEmpty 등등)
+  * 실무에서는 회원 엔티티를 위한 API가 다양하게 만들어지는데, 한 엔티티에 각각의 API를
+    위한 모든 요청 요구사항을 담기는 어렵다.
+  * 엔티티가 변경되면 API 스펙이 변한다.
+
+* **결론**
+  * API 요청 스펙에 맞추어 별도의 DTO를 파라미터로 받아서 해결한다.
+
+* **포스트 맨으로 동작 확인**
+
+  * name을 hello로 저장하기 위해 Body에 아래 사진처럼 담아서 POST 방식으로 전송하면,
+  * DB에 생성되고 id값 반환을 받게 된다.
+
+  <img src=".\images\image-20230307224000506.png" alt="image-20230307224000506"  /> 
+
+<br>
+
+**등록 V2: 요청 값(RequestBody)으로 Member 엔티티 대신에 별도의 DTO를 받는다.**
+
+```java
+@PostMapping("/api/v2/members")
+public CreateMemberResponse saveMemberV2(@RequestBody @Valid CreateMemberRequest request) {
+    Member member = new Member();
+    member.setName(request.getName());
+
+    Long id = memberService.join(member);
+    return new CreateMemberResponse(id);
+}
+```
+
+* DTO 역할을 하는것은 별도로 만든 `CreateMemberRequest` 클래스 이다.
+
+  * ```java
+    @Data
+    static class CreateMemberRequest {
+        @NotEmpty // 이렇게 쓸 수 있다는것도 큰 장점
+        private String name;
+    }
+    ```
+
+    * 외부에서 만들어도 되고, 여기선 안에 만든거라 간단히 선언!
+    * `@Data 또는 @Getter` 가 없으면 에러가 뜰테니 참고
+
+* 엔티티와 프레젠테이션 계층을 위한 로직을 분리할 수있다.
+
+* 엔티티와 API 스펙을 명확하게 분리할 수 있다. 
+
+* 엔티티가 변해도 API 스펙이 변하지 않는다.
+
+* **결론**
+
+  * **API설계 시 실무에서는 엔티티를 외부에 노출시키면 안된다.**
+
+* **DTO로 개발시 안전성 보장!! (아래 사진 확인)**
+
+  <img src=".\images\image-20230307224355564.png" alt="image-20230307224355564"  /> 
+
+  * 이처럼 엔티티 필드명 "name" -> "username" 으로 맘대로 바꿨을때 위 로직에서 컴파일 에러(빨간글자)!!
+  * 따라서 유지보수가 훨씬 편해진다.
+
+<br>
+
+### 회원 수정 API
+
+**회원수정 API인 아래 `updateMemberV2` 함수는 회원 정보를 부분 업데이트한다.** 
+
+* 여기서 PUT 방식을 사용했는데, PUT은 전체 업데이트를 할때 사용하는 것이 맞다. 
+* **부분 업데이트**를 하려면 PATCH를 사용하거나 **POST를 사용하는것이 REST 스타일에 맞다.**
+
+```java
+// @PutMapping("/api/v2/members/{id}") // 전체 수정은 PUT 사용
+@PostMapping("/api/v2/members/{id}") // 부분 수정은 POST 사용
+public UpdateMemberResponse updateMemberV2(@PathVariable("id") Long id, @RequestBody @Valid UpdateMemberRequest request) {
+    memberService.update(id, request.getName()); // update함수 새로 개발(변경 감지를 사용해서 데이터를 수정)
+    Member findMember = memberService.findOne(id); // update된 값으로 member 엔티티 가져옴
+    return new UpdateMemberResponse(findMember.getId(), findMember.getName());
+}
+```
+
+* `UpdateMemberRequest` 는 DTO용으로 따로 만든 클래스이다.
+
+* 서비스 계층에서 update함수를 새로 개발하였다.
+
+  ```java
+  /**
+  	* 회원 수정
+  */
+  @Transactional
+  public void update(Long id, String name) {
+      Member member = memberRepository.findOne(id);
+      member.setName(name); // Flush:영속성 컨텍스트의 변경 내용을 DB 에 반영하는 것
+  }
+  ```
+
+  * JPA가 트랜잭션 커밋시점에 값이 바뀐지점을 찾아서 db에 update쿼리 쏴주고 트랜잭션 커밋
+
+* 반환할 때 `UpdateMemberResponse` 클래스 만들어서 반환하고 싶은 값들로 구성
+
+  ```java
+  @Data
+  @AllArgsConstructor // 생성자 대신 만들어 줄 테니까 필드만 선언
+  static class UpdateMemberResponse {
+      private Long id;
+      private String name;
+  }
+  ```
+
+<br>
+
+**포스트맨 테스트**
+
+<img src=".\images\image-20230308020050790.png" alt="image-20230308020050790" style="zoom:80%;" /> 
+
+<img src=".\images\image-20230308020123766.png" alt="image-20230308020123766" style="zoom:80%;" /> 
+
+<br>
+
+### 회원 조회 API
+
+**조회 V1: 응답 값으로 엔티티를 직접 외부에 노출한다.**
+
+```java
+@GetMapping("/api/v1/members")
+public List<Member> membersV1() {
+    return memberService.findMembers();
+}
+```
+
+* 문제점
+  * 엔티티에 프레젠테이션 계층을 위한 로직이 추가된다.
+  * 기본적으로 엔티티의 모든 값이 노출된다.
+  * 응답 스펙을 맞추기 위해 로직이 추가된다. (@JsonIgnore, 별도의 뷰 로직 등등)
+  * 실무에서는 같은 엔티티에 대해 API가 용도에 따라 다양하게 만들어지는데, 한 엔티티에 각각의
+    API를 위한 프레젠테이션 응답 로직을 담기는 어렵다.
+  * 엔티티가 변경되면 API 스펙이 변한다.
+  * 추가로 컬렉션을 직접 반환하면 항후 API 스펙을 변경하기 어렵다.(별도의 Result 클래스
+    생성으로 해결)
+* 결론
+  * API 응답 스펙에 맞추어 별도의 DTO를 반환한다.
+
+<br>
+
+**조회 V2: 응답 값으로 엔티티가 아닌 별도의 DTO를 반환한다.**
+
+```java
+@GetMapping("/api/v2/members")
+public Result membersV2() {
+    List<Member> findMembers = memberService.findMembers();
+    //엔티티 -> DTO 변환
+    List<MemberDto> result = findMembers.stream() // stream으로 풀기
+        .map(m -> new MemberDto(m.getName())) // map함수 사용! (이때 DTO로 변환)
+        .collect(Collectors.toList()); // 반환값 list로 변환!
+    return new Result(result); // 오브젝트로 배열 감싸서 반환
+}
+```
+
+* **DTO는?** 
+
+  ```java
+  @Data
+  @AllArgsConstructor // 생성자 자동! 필드만 선언!
+  static class MemberDto {
+      private String name;
+  }
+  ```
+
+  * 참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것
+
+* **반환값이 배열로 반환이 되기 때문에 마지막엔 객체로 감싸서 반환해주는게 필요하다.**
+
+  <img src=".\images\image-20230308021524143.png" alt="image-20230308021524143" style="zoom:67%;" /> ==> =>                            <img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\images\README\image-20230308021648305-16782094304791.png" alt="image-20230308021648305" style="zoom:67%;" /> 
+
+  * 왼쪽 그림처럼 배열엔 `"count" : 4` 같은 데이터를 바로 못 집어넣는 형태이다.
+
+  * **따라서 오른쪽 그림처럼 최상위는 객체로 감싸주고, 안에 "data"같은 키의 값부분에 왼쪽 그림의 배열 데이터들을 넣는게 일반적인 JSON 응답 구조이다.**
+
+    ```java
+    @Data
+    @AllArgsConstructor
+    static class Result<T> {
+        private int count; // 이처럼 객체로 감싸면 다른 변수도 쉽게 삽입 가능
+        private T data;
+    }
+    ```
+
+<br><br>
+
+## API 개발 고급 들어가기전 샘플 데이터 생성
+
+샘플 데이터를 삽입하는 자세한 코드는 프로젝트 코드에서 확인할 것!
+
+* `InitDb.java` 파일 입니다.
+
+  * 앱실행시 총 주문 2개 자동 insert
+  * userA
+    * JPA1 BOOK
+    * JPA2 BOOK
+  * userB
+    * SPRING1 BOOK
+    * SPRING2 BOOK
+
+* 여기서 사용된 중요 메소드는 `@PostConstruct, @PreDestroy` 이다.
+
+  * 앱 실행시점에 해당 메소드 실행
+  * 앱 종료시점에 해당 메소드 실행
+
+* 또 중요한점은 `@PostConstruct` 가 선언된 함수에서 바로 서비스 메소드를 구현하지 말고 따로 구현하라는 것. (즉, 트랜잭션 들어가는 내용의미 = 데이터 변경)
+
+  ```java
+  @PostConstruct // 앱 실행 시점에 해당 메소드 실행(참고 : @PreDestroy 는 종료시점)
+  public void init() {
+      initService.dbInit1(); // 따로 서비스 함수 구현할 것
+      initService.dbInit2();
+  }
+  
+  @Component // 순서는 Component 가 먼저 스프링 빈에 등록되고 @PostConstruct 부분을 실행
+  @Transactional // 트랜잭션 같은거 할 때 문제 있을 수 있기 때문에 따로 구현하라고 함
+  @RequiredArgsConstructor
+  static class InitService {
+      private final EntityManager em;
+      public void dbInit1() { ... 생략 }
+  ```
+
+  * 스크링 빈의 라이프사이클 특성상 트랜잭션 같은거 할 때 문제 없으려면 따로 구현이 필요
+  * 실행 순서는 Component 가 먼저 스프링 빈에 등록되고 @PostConstruct 부분을 실행
+
+<br>
+
+**데이터들이 삽입된 모습**
+
+<img src=".\images\image-20230308023310542.png" alt="image-20230308023310542" style="zoom: 80%;" /> 
+
+<br><br>
+
+## API 개발 고급 - 지연 로딩(LAZY)과 조회 성능 최적화
+
+**API 개발 고급 부분에서는 조회만 다룰것이다 (보통 조회에서 주로 최적화를 한다고 했던것 같다..?)**  
+
+**조회에서 성능을 최적화 하는 좋은 방법들로만 소개하겠다.**
+
+**현업에서 API 문제같은 경우 대부분 여기서 소개하는 부분들로 다 해결이 되었다고 한다.**
+
+<br>
+
+### v1/simple-orders : 엔티티 직접 노출
+
+https://www.inflearn.com/notes/37668#s-24317
+
+https://github.com/BH946/spring_second_roadmap/tree/main/spring_study_1/jpashop
+
+활용편2 pdf
+
+인텔리J 코드 - OrderSimpleApiController.java
+
+<br>
+
+### v2/simple-orders : 엔티티를 DTO로 변환
+
+
+
+<br>
+
+### v3/simple-orders : 엔티티를 DTO로 변환 - 페치 조인 최적화
+
+
+
+<br>
+
+### v4/simple-orders : JPA에서 DTO로 바로 조회
+
+
+
+<br><br>
+
+## API 개발 고급 - 컬렉션 조회 최적화
+
+<br>
+
+### v1/orders : 엔티티 직접 노출
+
+
+
+<br>
+
+### v2/orders : 엔티티를 DTO로 변환
+
+
+
+<br>
+
+### v3/orders : 엔티티를 DTO로 변환 - 페치 조인 최적화
+
+
+
+<br>
+
+### v3.1/orders : 엔티티를 DTO로 변환 - 페이징과 한계 돌파
+
+
+
+<br>
+
+### v4/orders : JPA에서 DTO 직접 조회
+
+
+
+<br>
+
+### v5/orders : JPA에서 DTO 직접 조회 - 컬렉션 조회 최적화
+
+
+
+<br>
+
+### v6/orders : JPA에서 DTO 직접 조회, 플랫 데이터 최적화
+
+
+
+
+
+<br><br>
+
+## API 개발 고급 - 실무 필수 최적화
+
+<br>
+
+### OSIV와 성능 최적화
+
+
+
+<br><br>
+
+
 
 양방향 해결 & 프록시 문제(LAZY 문제) 해결 한 상태에서 LAZY 강제 초기화만 안한 상태.  
 첨고로 양방향 관계 문제 발생 -> @JsonIgnore => Order과 연관된 Delivery, OrderItem, Member 에 적용했음
@@ -205,4 +619,39 @@ orderItems.stream().forEach(o -> o.getItem().getName()); // Lazy 강제 초기�
 
 .getResultList(); => 쿼리문에 보면 있윰
 ```
+
+
+
+
+
+
+
+<br><br>
+
+# 마무리 - 스프링 데이터 JPA, QueryDSL 소개
+
+**마무리로 `스프링 데이터 JPA, QueryDSL` 을 간략히 소개하고 마치겠습니다.**
+
+<br><br>
+
+## 스프링 데이터 JPA
+
+
+
+
+
+<br><br>
+
+## QueryDSL
+
+
+
+<br><br>
+
+# 참고 자료
+
+**각각 사이트에서 그림을 가져왔다. (그림들이 알기 쉽게 잘 되어 있음!)**
+
+* **[일반적인 Spring MVC 처리과정](https://dncjf64.tistory.com/288)**
+* **[Controller, RestController 비교](https://mangkyu.tistory.com/49)**
 
