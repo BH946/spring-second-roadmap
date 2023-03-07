@@ -13,7 +13,7 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@RestController // @Controller + @RequestBody
+@RestController // @Controller + @ResponseBody
 @RequiredArgsConstructor // 생성자 + @Autowired
 public class MemberApiController {
 
