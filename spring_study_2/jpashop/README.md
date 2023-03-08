@@ -3,6 +3,7 @@
 **실전! 스프링 부트와 JPA 활용2 - API 개발과 성능 최적화**
 
 * 인프런 강의 듣고 공부한 내용입니다.
+
 * **유용한 단축키**
   * `Alt + Insert` : getter, setter, constructor 등 자동 생성
   * `Ctrl + Alt + V` : 변수 선언부를 자동 작성
@@ -14,6 +15,23 @@
   * `Shift + F6` : 변수명을 한번에 바꿀 때 사용
   * `Alt + 1 ` : 왼쪽 프로젝트 폴더 구조 열기
   * `Alt + F12` : 터미널 창 열기
+  
+* **생소했던 문법**
+
+  ```java
+  // stream ...
+  List<OrderItem> orderItems = order.getOrderItems();
+  orderItems.stream().forEach(o -> o.getItem().getName()); // Lazy 강제 초기화
+  
+  // stream ...
+  List<MemberDto> result = findMembers.stream() // stream으로 풀기
+          .map(m -> new MemberDto(m.getName())) // map함수 사용! (이때 DTO로 변환)
+          .collect(Collectors.toList()); // 반환값 list로 변환!
+  
+  // getResultList()
+  return em.createQuery("select i from Item i", Item.class)
+                  .getResultList(); // 쿼리문에서 종종 보였음
+  ```
 
 <br>
 
@@ -138,13 +156,11 @@
 
 # OSIV와 성능 최적화
 
-이거랑 아래 전체 흐름 정리하면 된다..
+**자세한건 아래 마지막 부분쯤에 정리한것 확인**
 
+<img src=".\images\image-20230309023958076.png" alt="image-20230309023958076" style="zoom:80%;" /> 
 
-
-
-
-
+<img src=".\images\image-20230309024031719.png" alt="image-20230309024031719" style="zoom: 80%;" /> 
 
 <br><br>
 
@@ -468,6 +484,10 @@ public Result membersV2() {
 
 **API 개발 고급 부분에서는 조회만 다룰것이다 (보통 조회에서 주로 최적화를 한다고 했던것 같다..?)**  
 
+* **주문 + 배송정보 + 회원을 조회하는 API를 만들자**
+* **여기선 xToOne(M:1, 1:1) 에서의 최적화를 주로 다룰 것이다@!@!@!@**
+  * **참고로 order->member, order->delivery 등등.. 가 xToOne관계였었음 (예전에 했었음 기억!!)**
+
 **조회에서 성능을 최적화 하는 좋은 방법들로만 소개하겠다.**
 
 **현업에서 API 문제같은 경우 대부분 여기서 소개하는 부분들로 다 해결이 되었다고 한다.**
@@ -476,155 +496,298 @@ public Result membersV2() {
 
 ### v1/simple-orders : 엔티티 직접 노출
 
-https://www.inflearn.com/notes/37668#s-24317
+**`api/OrderSimpleApiController.java` 파일에 만들것이다!!**
 
-https://github.com/BH946/spring_second_roadmap/tree/main/spring_study_1/jpashop
+**간단히 `orderRepository.findAllByString(..)` 을 통해서 모든 데이터를 조회하면 많은 문제들이 나타남.**
 
-활용편2 pdf
+* **첫번째로 무한반복 문제( 양방향 관계 때문 )**
+  * jackson이 Order엔티티에 Member, Delivery 있으니까 접근해서 출력할텐데
+  * 각각 접근하면 또 Order내용 있어서  Order에 접근하면.... 무한 반복...
+  * `@JsonIgnore` **을 통해서 양방향 관계 있을땐 한쪽에는 이걸 선언해줘야 해결!**
+    * 실제로 코드 작성했을땐 Member, Delivery, OrderItem 엔티티들에 각각 @JsonIgnore 적용했음
+* **두번째 ByteBuddy... 에러 발생( 지연로딩 때문 )**
+  * `@ManyToOne(fetch=LAZY)` 선언처럼 지연로딩의 효과는 즉시 DB를 접근하는게 아니고, 사용(필요)하게 될 때 DB에 접근하는 효과가 있었다.
+    - 하지만 초기값을 null을 넣어둘수는 없으므로 `ByteBuddyInterceptor()` 라는 클래스 객체를 넣어둔다!!!
+    - 이것은 프록시 객체이며, 위에서 언급했었던 "사용(필요)하게 될 때 DB에 쿼리문 날리는 것"을 프록시 초기화라고 한다. => **프록시 기술 관련!**
+  * 다만 JSON으로 또 나타낼때 jackson라이브러리는 프록시 기술관련을 모를뿐더러 `ByteBuddyInterceptor()` 라는 클래스도 모르기에 에러를 출력하는것이다.
+  * **여기서 해결방안이 있는데, 지연로딩일때는 그냥 아무것도 뿌리지 말라고하는 명령이 있다!! (NULL!!)**
+    * **Hibernate5Module을 @Bean 등록해주면 끝이다.**
+      * 하이버네이트 하이버 모듈 설치(버전 빼도 알아서 스프링부트가 최적화된 버전 설치해주는것 기억)
+    * 효과 : 알아서 초기화 된 프록시 객체만 노출, 초기화 되지 않은 프록시 객체는 노출 안함(NULL)
+    * **또한, 하이버네이트 옵션에 강제로 LAZY 로딩 하는 옵션도 있어서 데이터를 다 뽑아 볼수도있다. ( 알 필요 없음)**
+      - 물론 이 옵션의 존재만 알도록! 쓸일 없음.
+      - 지연로딩을 통해서 애초에 필요없는 쿼리들은 안 쏘아보낸건데 강제로 LAZY 로딩은 이 쿼리들을 다 쏘아 보내는거다.
+      - 정말 테스트로 보려는것 말고는 쓸일이 없다는 것
+      - 애초에 엔티티 노출하지 말라했기 때문에 정말로 이부분들은 참고만 할 것
 
-인텔리J 코드 - OrderSimpleApiController.java
+<br>
+
+**양방향 해결 & 프록시 문제(LAZY 문제) 해결 한 상태에서 LAZY 강제 초기화만 안한 상태** 
+
+<img src=".\images\image-20230304223646092.png" alt="image-20230304223646092"  /> 
+
+<br>
+
+**엔티티의 실제 값을 구하게 해서 DB 접근으로 LAZY 강제 초기화 한 상태  
+orderitems가 null => 이부분은 v3에서 다루며, 패치 조인 필요**
+
+* 참고로 여기서 사용한 LAZY 강제 초기화 방법은 여러번 소개했던 방법으로 구현한 것이다.
+
+<img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\images\README\image-20230304224539759.png" alt="image-20230304224539759"  /> 
 
 <br>
 
 ### v2/simple-orders : 엔티티를 DTO로 변환
 
+**V2는 V1내용들 단순히 DTO로 변환 ( 물론 V1, V2 둘다 1+N 문제 있음 )  
+당연히 V2는 엔티티 보호 및 원하는 내용들로 반환해주는 효과들이 있음.**
 
+**`N+1 문제`가 발생하는것이 핵심..!! => 위에서 정리한 N+1 관련 내용 참고**
 
 <br>
 
 ### v3/simple-orders : 엔티티를 DTO로 변환 - 페치 조인 최적화
 
+**`N+1 문제` 를 해결하는 `페치 조인` 방법을 사용해본다.**
 
+* jpql의 `join fecth` 문법을 이용!!
+
+  ```java
+  // 페치조인으로 order -> member , order -> delivery 는이미 조회된 상태이므로 지연로딩X
+  public List<Order> findAllWithMemberDelivery() {
+      return em.createQuery(
+          "select o from Order o" +
+          " join fetch o.member m" +
+          " join fetch o.delivery d", Order.class)
+          .getResultList();
+  }
+  ```
+
+* 쿼리문 1번만 날라간다 (실무에서 정말 많이 사용)
+
+  * SQL 문법인 inner join 이 사용된다.
+  
+  <img src=".\images\image-20230308191402946.png" alt="image-20230308191402946" style="zoom:80%;" /> 
 
 <br>
 
 ### v4/simple-orders : JPA에서 DTO로 바로 조회
 
+**V4. JPA에서 DTO로 바로 조회** 
 
+* 쿼리 1번 호출
+
+* select 절에서 원하는 데이터만 선택해서 조회!!
+
+  ```java
+  @GetMapping("/api/v4/simple-orders")
+  public List<OrderSimpleQueryDto> ordersV4() {
+      return orderSimpleQueryRepository.findOrderDtos();
+  }
+  ```
+
+  * `orderSimpleQueryRepository.findOrderDtos()` 를 사용!!! (레퍼지토리도 새로 만든것이다)
+
+    * 왜냐면 기존 OrderRepository에는 순수한 엔티티에만 접근하는 코드들을 놔두려고 하는 편이라 함.
+
+    ```java
+    // repository 패키지에 order 패키지 만들어서 OrderSimpleQueryRepository.java 생성 추천!
+    public List<OrderSimpleQueryDto> findOrderDtos() {
+        return em.createQuery(
+            "select new jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto(o.id, m.name, o.orderDate, o.status, d.address)" +
+            " from Order o" +
+            " join o.member m" +
+            " join o.delivery d", OrderSimpleQueryDto.class)
+            .getResultList();
+    }
+    ```
+
+    * select 문에서 객체 생성해서 가져오는것 마냥 jpql을 짤 수 있다!! (querydsl쓰면 더 편하다고 함!!)
+    * 여기서 `OrderSimpleQueryDto` 도 만들어 사용해준다.
+      * MVC 패턴을 유지하고 있으므로 `service->repository->db` 의 구조이다.
+      * 따라서 `repository -> controller` 가 아니기 때문에 기존 controller 파일에 DTO를 static class로 만들면 MVC 패턴에 위배된다는점 참고하자!
+
+* SELECT 절에서 원하는 데이터를 직접 선택 하므로 DB -> 애플리케이션 네트웍 용량 최적화(생각보다 
+  미비)
+
+* 리포지토리 재사용성 떨어짐, API 스펙에 맞춘 코드가 리포지토리에 들어가는 단점
 
 <br><br>
 
 ## API 개발 고급 - 컬렉션 조회 최적화
 
+**이번엔 `OneToMany(=XtoMany)` 를 조회를 최적화 해보자!!**
+
+* 해당하는 엔티티들은 Order 기준으로 OrderItem, Item 이 있다.
+
+**참고로 컬렉션 관련해서도 초반에 정리했었다!!**
+
 <br>
 
 ### v1/orders : 엔티티 직접 노출
 
+**`OrderApiController.java` 만들어서 작성!!**
 
+**참고로 이전에 한 하이버네이트 모듈 사용 중이므로 지연로딩(LAZY) 값들은 null로 띄어줄거임.**  
+**또한, LAZY 강제 초기화도 이전처럼 할거임.**
+
+**하지만!! 엔티티 노출은 안좋다고 했습니다~~ DTO로 하자**
 
 <br>
 
 ### v2/orders : 엔티티를 DTO로 변환
 
+**DTO로 변환하는건 문제없는데 `Order->OrderItem->Item` 처럼 엔티티가 구조를 가진다면???**
 
+* 흔히들 Order까지만 DTO를 형성해서 실수한다고함!! 
+
+* 귀찮더라도 OrderItem까지 해서 의존성을 완전히 끊어줘야한다. ( 아래 주석 잘 확인 )
+
+  ```java
+  @Getter
+  static class OrderDto {
+      private Long orderId;
+  	// ... 생략
+      // private List<OrderItem> orderItems; 이 코드처럼 실수 하지 말라는 것!
+      private List<OrderItemDto> orderItems;
+      public OrderDto(Order order) {
+          orderId = order.getId();
+  		// ... 생략
+          orderItems = order.getOrderItems().stream()
+              .map(o -> new OrderItemDto(o))
+              .collect(toList());
+      }
+  }
+  ```
+
+<br>
+
+**즉, DTO 클래스에 멤버의 타입같이 내부 데이터들도 DTO 적용 안되어있으면 반드시 해야한다.**
+
+**또한, 지연로딩으로 너무 많은 SQL 실행** 
+
+* SQL 실행 수
+  * `order`  1번
+  * `member, address`  N번(order 조회 수 만큼) 
+  * `orderItem`  N번(order 조회 수 만큼) 
+  * `item`  N번(orderItem 조회 수 만큼)
+* 참고: 지연로딩은 영속성 컨텍스트에 있으면 영속성 컨텍스트에 있는 엔티티를 사용하고 없으면 SQL을 
+  실행한다.   
+  따라서 같은 영속성 컨텍스트에서 이미 로딩한 회원 엔티티를 추가로 조회하면 SQL을 실행하지 않는다.
 
 <br>
 
 ### v3/orders : 엔티티를 DTO로 변환 - 페치 조인 최적화
 
+**V3. 엔티티 DTO + fecth join 사용**
 
+* 레퍼지토리에서 `findAllWithItem()` 에서 jpql인 `join fetch` 구문 사용할 것
+* 이전과 다른점은 `distinct` 를 사용해서 중복 제거한다는 것!! (자세한 내용은 컬렉션 관련해서 위에서 확인)
+  * 이전에는 XToOne 관계 였기 때문에 복제 걱정은 없었음!!
 
 <br>
 
 ### v3.1/orders : 엔티티를 DTO로 변환 - 페이징과 한계 돌파
 
+**V3.1 엔티티 DTO + fetch join (XToOne 만 해당) + 페이징 한계 돌파( hibernate 옵션 이용 )**
 
+* XToOne 관계만 모두 페치 조인으로 최적화 - 페이징에 전혀 문제 없어서!!
+
+* 컬렉션 관계는 `hibernate.default_batch_fetch_size, @BatchSize`로 최적화 - 즉, fetch join을 사용하는게 아님
+
+  * 여기선 지연로딩(LAZY) 조회를 사용하는 것!!
+
+  * 이 옵션을 사용하면 컬렉션이나, 프록시 객체를 한꺼번에 설정한 size 만큼 IN 쿼리로 조회한다. 
+
+    ```yaml
+    spring:
+      jpa:
+        properties:
+          hibernate:
+            default_batch_fetch_size: 1000
+    ```
+
+    * size는 100~1000 을 추천하며, 주변 환경들의 성능에 따라서 선택하자!
+
+<br>
+
+**쿼리 호출 수가 `1 + N` -> `1 + 1` 로 최적화 된다.**
 
 <br>
 
 ### v4/orders : JPA에서 DTO 직접 조회
 
+**자세한것은 코드들이 길어서 프로젝트 코드를 확인!!**
 
+**쿼리 호출 수는 `1 + N`**
 
 <br>
 
 ### v5/orders : JPA에서 DTO 직접 조회 - 컬렉션 조회 최적화
 
+**자세한것은 코드들이 길어서 프로젝트 코드를 확인!!**
 
+**쿼리 호출 수는 `1 + 1`**
 
 <br>
 
 ### v6/orders : JPA에서 DTO 직접 조회, 플랫 데이터 최적화
 
+**자세한것은 코드들이 길어서 프로젝트 코드를 확인!!**
 
-
-
+**쿼리 호출 수는 `1`**
 
 <br><br>
 
 ## API 개발 고급 - 실무 필수 최적화
 
+**중요한 개념을 소개**
+
+* Open Session In View : 하이버네이트 (옛날 것)
+* Open EntityManager In View : JPA (새로 출시된것)   
+  (관례상 OSIV라 한다)
+
 <br>
 
 ### OSIV와 성능 최적화
 
+**service 패키지에 query패키지 만들어서 안에 `OrderQueyrService.java` 생성 작성 (쿼리 계층)**
 
+<img src=".\images\image-20230309023958076.png" alt="image-20230309023958076" style="zoom:80%;" /> 
 
-<br><br>
+**`spring.jpa.open-in-view` : true 기본값**
 
+**트랜잭션 시작처럼 최초 데이터베이스 커넥션 시작 시점 ~ API 응답이 끝날 때 까지  
+영속성 컨텍스트, 데이터베이스 커넥션 유지**
 
+* 장점 : 덕분에 View Template, ,API 컨트롤러에서 지연 로딩(LAZY) 가 가능했던 것
+* 단점 : 실시간 앱 등등 에서는 커넥션 낭비로 인해 커넥션이 모자랄 수 있다.
 
-양방향 해결 & 프록시 문제(LAZY 문제) 해결 한 상태에서 LAZY 강제 초기화만 안한 상태.  
-첨고로 양방향 관계 문제 발생 -> @JsonIgnore => Order과 연관된 Delivery, OrderItem, Member 에 적용했음
+<br>
 
-<img src=".\images\image-20230304223646092.png" alt="image-20230304223646092"  /> 
+<img src=".\images\image-20230309024031719.png" alt="image-20230309024031719" style="zoom: 80%;" /> 
 
+**`spring.jpa.open-in-view` : false (OSIV 종료)**
 
+트랜잭션 종료할 때 영속성 컨텍스트를 닫고, 데이터베이스 커넥션도 반환
 
-엔티티의 실제값 구하게 해서 DB 접근으로 LAZY 강제 초기화 한 상태  
-orderitems는 XXXXXXXX => 이부분은 v3에서 다루며, 패치 조인 필요
+* 장점 : 커넥션 리소스 낭비하지 않음
+* 단점 : 지연로딩(LAZY) 이 문제
+* 해결방안 ?? 아래 3가지 외에도 여러가지 존재
+  * OSIV를 그냥 킨다
+  * 페치조인을 사용한다.
+  * 트랜잭션 내에 작성한다. (이부분이 실습해주신 내용)
 
-<img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\images\README\image-20230304224539759.png" alt="image-20230304224539759"  /> 
+<br>
 
+<img src=".\images\image-20230309025312037.png" alt="image-20230309025312037"  /> 
 
-
-V2는 V1내용들 단순히 DTO로 변환 ( 물론 V1, V2 둘다 1+N 문제 있음 )  
-당연히 엔티티보호 및 원하는 내용들로 반환해쥬는 효과
-
-
-
-V4 는 JPA방식으로 다른조회방식인데, 파일들도 따로 부뉴했댱 레퍼지토리를 새로 만들었윰.  
-물론 api 호출은 컨트롤러에 그대로 v4 버전으로 만ㄷ
-
-
-
-뒤부터... 앞의예제에서는 toOne(OneToOne, ManyToOne) 관계만 있었다. 이번에는컬렉션인일대다관계 
-(OneToMany)를조회하고, 최적화하는 방법을 알아보자.
-
-엔티티 노출 방법 V1~..~!~!~!~!!~!~!~!
-
-JPA에서 DTO로 바로 조회 V4~...~!~!~!~!~!
-
-
-
-최적화 권장
-
-니마ㅓ리ㅏ너로ㅑ더파ㅣ;ㅏㅓㅜㅠㅗㅓㅏㄷ래패아 ㅟ
-
-
-
-OSLI>?? 이후 정리해야함.ㅎ늘.,느.
-
-
-
-```
-List<OrderItem> orderItems = order.getOrderItems();
-orderItems.stream().forEach(o -> o.getItem().getName()); // Lazy 강제 초기화
-```
-
-처럼 하는거랑, 또 다른 방식 stream이거 하는거 둘다 정리.
-
-```
-.collect(Collectors.toList());
-
-.getResultList(); => 쿼리문에 보면 있윰
-```
-
-
-
-
-
-
+* `open-in-view : false` 로 설정해서 OSIV를 꺼보는것
+* 지연로딩에러가 바로 뜨게되므로 해결 방안 중에서 트랜잭션 내에 작성하는것으로 해결하자.
+  * 이를 `커멘드와 쿼리 분리` 라고 한다. 아래와 같이 분리한다.
+  * **OrderService => 강사님은 이 방식을 추천**
+    * OrderService : 핵심 비지니스 로직
+    * OrderQueryServiec : 화면이나 API에 맞춘 서비스 (주로 읽기 전용 트랜잭션 사용)
 
 <br><br>
 
@@ -636,15 +799,24 @@ orderItems.stream().forEach(o -> o.getItem().getName()); // Lazy 강제 초기�
 
 ## 스프링 데이터 JPA
 
+**기존 만든 save(), findOne() findAll() 등등 자주쓰는 함수들 만들때 구조가 비슷비슷함.**
 
+**이것을 자동화해서 미리 만들어 제공해주는게 스프링 데이터 JAP!!!!**
 
-
+- `MemberRepository` 를 인터페이스로 만들었을 뿐인데, 스프링 데이터 JPA가 알아서 구현해서 `private final MemberRepository memberRepository;` 이런식으로 바로 가져다 쓸 수 있음!!
+  - 생각보다 간단한 메소드들이 실무에서 사용하게 돼서 매우 매우 유용하다고 함
+- 특히 `findByName` 처럼일반화하기 어려운기능도 메서드 이름으로정확한 JPQL 쿼리를실행한다.
+  - `select m from Member m where m.name = :name`
 
 <br><br>
 
 ## QueryDSL
 
+**세팅은 귀찮았지만 사용할땐 직관적이고 좋음**
 
+- 자바코드라서 sql문 부분 쿼리 잘못적으면 컴파일 오류(빨간글자)를 알려줌!\
+
+**Querydsl은 JPA로애플리케이션을개발할때 선택이 아닌필수라 생각한다고 한다.**
 
 <br><br>
 
