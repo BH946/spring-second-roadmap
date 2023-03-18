@@ -13,6 +13,7 @@
 이곳 README.md 파일에는 기억할 내용들만 간략히 정리하겠습니다.
 
 * 자세한 코드가 궁금하다면, 올려둔 프로젝트에서 코드확인
+* **참고 : 필자는 `~/spring_study_dbh2/jpashop` 경로로 db파일 옮겼다!!**
 
 <br><br>
 
@@ -432,7 +433,7 @@ private List<Item> items = new ArrayList<>();
 
 <br>
 
-<img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\spring_second_roadmap\spring_study_1\jpashop\images\image-20230212165545520.png" alt="image-20230212165545520" style="zoom:80%;" /> 
+<img src=".\images\image-20230212165545520.png" alt="image-20230212165545520" style="zoom:80%;" /> 
 
 * 스프링부트에 `SpringPhysicalNamingStrategy`가 있어서 이렇게 테이블, 컬럼명이 자동으로 생성된다.
 * `orderDate`로 필드 선언만 했는데, 해당 필드명으로 테이블에 컬럼 이름이 `order_date`로 자동 설정
