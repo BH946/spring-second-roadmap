@@ -20,7 +20,7 @@ public class JpaMain {
             Member member = new Member();
             member.setId(2L);
             member.setName("HelloB");
-//            em.persist(member);
+            em.persist(member);
 
             tx.commit();
         }catch (Exception e) {
