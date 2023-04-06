@@ -17,16 +17,16 @@ public class JpaMain {
         // 물론 현재 스프링 부트는 아래코드보다 간단
         tx.begin();
         try{
-            Member member = new Member();
-            member.setId(2L);
-            member.setName("HelloB");
-            // 1차 캐시에 저장. 즉, 영속성 컨텍스트에 저장
-            em.persist(member);
-            // 1차 캐시에서 조회
-            Member findMember = em.find(Member.class, 2L);
-            System.out.println("findMember.id = " + findMember.getId());
+            // DB에 id 2인 member 한개 있는상황
 
-            tx.commit(); // 이때 쿼리 날라감. (insert 쿼리만 날라감. select 없고)
+            // 영속 엔티티 조회
+            System.out.println("start");
+            Member findMember = em.find(Member.class, 2L); // 이때 select쿼리
+            System.out.println("end");
+            // 이때 엔티티 데이터 수정
+            findMember.setName("hi"); // 1차캐시에서 더티채킹
+
+            tx.commit(); // 이때 쿼리 날라감. (update쿼리)
         }catch (Exception e) {
             tx.rollback();
         }finally {
