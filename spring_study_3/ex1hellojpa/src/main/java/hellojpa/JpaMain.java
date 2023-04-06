@@ -14,13 +14,14 @@ public class JpaMain {
         EntityTransaction tx = em.getTransaction();
         
         // DB변경은 반드시 트랜잭션 내에서! 아래 코드가 정석
-        // 물론 현재 스프링은 아래코드보다 간단
+        // 물론 현재 스프링 부트는 아래코드보다 간단
         tx.begin();
         try{
             Member member = new Member();
             member.setId(2L);
             member.setName("HelloB");
-            em.persist(member);
+//            em.persist(member);
+
             tx.commit();
         }catch (Exception e) {
             tx.rollback();
