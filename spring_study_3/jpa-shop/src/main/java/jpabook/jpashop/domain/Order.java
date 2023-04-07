@@ -14,11 +14,13 @@ public class Order extends BaseEntity {
 
     //    @Column(name = "member_id")
 //    private Long memberId;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="member_id") // 외래키
     private Member member;
 
-    @OneToOne
+    // cascade여기서 쓰는 이유는 주문 생성때 배달정보도 같이 생성하겠다는것.
+    // 즉, 라이프사이클을 같이 하겠다고 이해하면 됨.
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "delivery_id")
     private Delivery delivery;
 
@@ -27,8 +29,10 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
+    // cascade여기서 쓰는 이유는 주문 생성때 주문상품 정보도 같이 생성하겠다는것.
+    // 즉, 라이프사이클을 같이 하겠다고 이해하면 됨.
     // 연관관계 주인은 OrderItem ("다")
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     // 연관관계 편의 메소드

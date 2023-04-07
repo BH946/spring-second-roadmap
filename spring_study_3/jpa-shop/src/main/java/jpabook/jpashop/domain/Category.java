@@ -14,12 +14,12 @@ public class Category extends BaseEntity {
 
     // 상위 카테고리 라는개념
     // 자식 입장에선 부모가 하나 - N:1
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
 
     // 부모 입장에선 자식 여럿 - 1:N
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent") // 기본이 LAZY
     private List<Category> child = new ArrayList<>();
 
     @ManyToMany
