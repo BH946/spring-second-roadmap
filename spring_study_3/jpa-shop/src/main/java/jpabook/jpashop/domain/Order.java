@@ -2,17 +2,50 @@ package jpabook.jpashop.domain;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "ORDERS") // 테이블명 ORDERS 랑 매핑입니다.
 public class Order {
+    @Id @GeneratedValue
+    @Column(name = "order_id")
+    private Long id;
+
+    //    @Column(name = "member_id")
+//    private Long memberId;
+    @ManyToOne
+    @JoinColumn(name="member_id") // 외래키
+    private Member member;
+
+    private LocalDateTime orderDate;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
+    // 연관관계 주인은 OrderItem ("다")
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    // 연관관계 편의 메소드
+    public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.setOrder(this);
+    }
+
+
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<OrderItem> orderItems) {
+        this.orderItems = orderItems;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
 
-    public void setMemberId(Long memberId) {
-        this.memberId = memberId;
-    }
 
     public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;
@@ -26,9 +59,6 @@ public class Order {
         return id;
     }
 
-    public Long getMemberId() {
-        return memberId;
-    }
 
     public LocalDateTime getOrderDate() {
         return orderDate;
@@ -38,14 +68,13 @@ public class Order {
         return status;
     }
 
-    @Id @GeneratedValue
-    @Column(name = "order_id")
-    private Long id;
+    public Member getMember() {
+        return member;
+    }
 
-    @Column(name = "member_id")
-    private Long memberId;
-    private LocalDateTime orderDate;
+    public void setMember(Member member) {
+        this.member = member;
+    }
 
-    @Enumerated(EnumType.STRING)
-    private OrderStatus status;
+
 }

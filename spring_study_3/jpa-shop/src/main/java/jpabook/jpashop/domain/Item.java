@@ -11,6 +11,12 @@ public class Item {
     @Column(name = "item_id")
     private Long id;
 
+    private String name;
+    private Integer price;
+    private Integer stockQuantity;
+
+
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -43,7 +49,5 @@ public class Item {
         return stockQuantity;
     }
 
-    private String name;
-    private Integer price;
-    private Integer stockQuantity;
+
 }
