@@ -1,8 +1,6 @@
 package jpabook.jpashop;
 
-import jpabook.jpashop.domain.Member;
-import jpabook.jpashop.domain.Order;
-import jpabook.jpashop.domain.OrderItem;
+import jpabook.jpashop.domain.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -19,18 +17,19 @@ public class JpaMain {
         tx.begin();
 
         try{
-            Order order = new Order();
-            em.persist(order);
+            // Item을 추상 클래스로 만들었으니, Item 하위들로 persist
+            // DB 동작 잘 안할땐 전부 drop하고 다시 해보는것도 추천
+            Book book = new Book();
+            book.setName("JPA");
+            book.setAuthor("사람22");
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-
-            em.persist(orderItem);
+            em.persist(book);
 
             tx.commit();
         }catch (Exception e) {
             tx.rollback();
             System.out.println(e.getMessage());
+            System.out.println("====================================");
         }finally {
             em.close();
         }

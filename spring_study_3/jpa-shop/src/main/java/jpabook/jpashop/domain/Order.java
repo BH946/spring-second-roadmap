@@ -7,7 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "Orders") // 테이블명 ORDERS 랑 매핑입니다.
-public class Order {
+public class Order extends BaseEntity {
     @Id @GeneratedValue
     @Column(name = "order_id")
     private Long id;
@@ -50,6 +50,13 @@ public class Order {
         this.id = id;
     }
 
+    public Delivery getDelivery() {
+        return delivery;
+    }
+
+    public void setDelivery(Delivery delivery) {
+        this.delivery = delivery;
+    }
 
     public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;

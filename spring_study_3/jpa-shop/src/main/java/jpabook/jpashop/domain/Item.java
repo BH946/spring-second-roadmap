@@ -4,8 +4,11 @@ import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+// Item만 독립적으로 생성될 일이 없다고 가정하고, 추상 클래스로 만들겠음.
 @Entity
-public class Item {
+@Inheritance(strategy = InheritanceType.JOINED) // JOIN방식 상속
+@DiscriminatorColumn // 상속 테이블임을 표시하기 위함(DTYPE)
+public abstract class Item extends BaseEntity {
     @Id @GeneratedValue
     @Column(name = "item_id")
     private Long id;
@@ -17,6 +20,14 @@ public class Item {
     @ManyToMany(mappedBy = "items")
     private List<Category> categories = new ArrayList<>();
 
+
+    public List<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
+    }
     public void setId(Long id) {
         this.id = id;
     }
