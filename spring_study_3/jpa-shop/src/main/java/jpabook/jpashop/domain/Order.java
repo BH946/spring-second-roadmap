@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "ORDERS") // 테이블명 ORDERS 랑 매핑입니다.
+@Table(name = "Orders") // 테이블명 ORDERS 랑 매핑입니다.
 public class Order {
     @Id @GeneratedValue
     @Column(name = "order_id")
@@ -17,6 +17,10 @@ public class Order {
     @ManyToOne
     @JoinColumn(name="member_id") // 외래키
     private Member member;
+
+    @OneToOne
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
 
     private LocalDateTime orderDate;
 
