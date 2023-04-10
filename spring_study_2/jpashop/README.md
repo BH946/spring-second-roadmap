@@ -532,9 +532,9 @@ public Result membersV2() {
 **엔티티의 실제 값을 구하게 해서 DB 접근으로 LAZY 강제 초기화 한 상태  
 orderitems가 null => 이부분은 v3에서 다루며, 패치 조인 필요**
 
-* 참고로 여기서 사용한 LAZY 강제 초기화 방법은 여러번 소개했던 방법으로 구현한 것이다.
+* 참고로 여기서 사용한 LAZY 강제 초기화 방법은 여러번 소개했던 방법
 
-<img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\images\README\image-20230304224539759.png" alt="image-20230304224539759"  /> 
+<img src=".\images\image-20230410140105746.png" alt="image-20230410140105746"  />
 
 <br>
 
