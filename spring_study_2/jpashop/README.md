@@ -8,6 +8,7 @@
   * `Alt + Insert` : getter, setter, constructor 등 자동 생성
   * `Ctrl + Alt + V` : 변수 선언부를 자동 작성
   * `Ctrl + Alt + M` : 코드 리팩토링하기 쉽게끔 함수 자동 생성
+  * `Ctrl+T->extra method` : 코드 리팩토링하기 쉽게끔 드래그한 코드를 하나의 함수로 자동 생성
   * `Ctrl + Shift + Down/Up` : 메소드 코드 통째로 위, 아래 자리 이동 가능
   * `Alt + Shift + Down/Up` : 코드 한줄을 위, 아래 자리 이동 가능
   * `Ctrl + D` : 코드 한줄 바로 아래에 복제
