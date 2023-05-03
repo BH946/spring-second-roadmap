@@ -418,11 +418,11 @@ public Result membersV2() {
 
 * **반환값이 배열로 반환이 되기 때문에 마지막엔 객체로 감싸서 반환해주는게 필요하다.**
 
-  <img src=".\images\image-20230308021524143.png" alt="image-20230308021524143" style="zoom:67%;" /> ==> =>                            <img src="C:\Users\KoBongHun\Desktop\Git\Study\Spring_Study\images\README\image-20230308021648305-16782094304791.png" alt="image-20230308021648305" style="zoom:67%;" /> 
+  <img src=".\images\image-20230308021524143.png" alt="image-20230308021524143" style="zoom:67%;" /> ==> =>               
 
-  * 왼쪽 그림처럼 배열엔 `"count" : 4` 같은 데이터를 바로 못 집어넣는 형태이다.
+  * 그림처럼 배열엔 `"count" : 4` 같은 데이터를 바로 못 집어넣는 형태이다.
 
-  * **따라서 오른쪽 그림처럼 최상위는 객체로 감싸주고, 안에 "data"같은 키의 값부분에 왼쪽 그림의 배열 데이터들을 넣는게 일반적인 JSON 응답 구조이다.**
+  * **따라서 최상위는 객체로 감싸주고, 안에 "data"같은 키의 값 부분에 왼쪽 그림의 배열 데이터들을 넣는게 일반적인 JSON 응답 구조이다.**
 
     ```java
     @Data
