@@ -321,6 +321,13 @@
 
 * **JSON 반환시 꼭 마지막에 객체로 감싸서 반환해줄것**
 
+* **DTO와 DI(의존성 주입) 구분할 것**
+
+  * **스프링에서 DI(Dependency Injection)**는 객체를 new로 직접 생성하는것이 아닌 **스프링 컨테이너(외부)에서 객체를 생성해서 주는 방식**을 의미
+  * **DTO(Data Transfer Object)**는 **계층 간 데이터 교환을 하기 위해 사용하는 객체**로, 로직을 가지지 않는 순수한 데이터 객체
+    * 메소드는 주로 getter, setter만 가짐
+
+
 <br>
 
 **스프링 부트의 다양한 어노테이션**
@@ -346,7 +353,11 @@
   * @Repository : 스프링빈으로 등록, JPA 예외를 스프링 기반예외로 예외 변환
   * @PersistenceContext : 엔티티메니저( EntityManager ) 주입
   * @PersistenceUnit : 엔티티메니터팩토리( EntityManagerFactory ) 주입
+  * **`@RequiredArgsConstructor` : lombok의 어노테이션인데 이것도 `엔티티매니저` 주입을 제공해주므로, 이것과 `final` 조합으로 리포지토리, 서비스 둘다에서 활용하는것을 권장**
   * 보통 만드는 DB와 연관 메서드 : save(), findOne(), findAll(), findByName() 등등...
+    * `EntityManager` 의 함수들은 잘 구현되어있어서 `find()` 함수를 쓸때 값 없을때 null로 잘 반환해줌
+    * **우리가 직접 쿼리문 날려서 `find()` 함수를 구현할 때는 이 null 처리를 잘 해줘야한다는점**
+      * **TIP : `getResultList()` 형태로 (즉, List) 값을 받으면 null처리가 매우 간단**
 
 * **서비스**
 
@@ -354,6 +365,8 @@
   * @Transactional : 트랜잭션, 영속성 컨텍스트
     - readOnly=true : 데이터의 변경이 없는 읽기 전용 메서드에 사용, 영속성 컨텍스트를 플러시 하지 않으므로 약간의 성능 향상(읽기 전용에는 다 적용)
     - 데이터베이스 드라이버가 지원하면 DB에서 성능향상
+    - **이와 같은 이유로 `@Transactional(readOnly = true)` 로 사용 및 쓰기모드 필요할때면 해당 메소드단에 `Transactional` 을 또 선언해서 쓰기모드까지 사용**
+      - 기본값이 `readOnly=false` 
   * @Autowired
     - **앞전에 언급한것처럼 `@Autowired` 대신에 `@RequiredArgsConstructor` 와 `final ` 를 활용**
 
@@ -429,16 +442,28 @@
       * 롤백은 건드리지않고 flush 진행하므로, 롤백은 그대로 진행하면서 insert문 로그 확인가능
   * `@AfterEach` 는 테스트 끝나면 실행되는 것인데, 이를 활용한다.
   * `@BeforeEach` 는 테스트 시작전 실행되는 것인데, 이것도 활용할 수 있다.
-  * print대신 assert비교
+  * **print대신 assert비교 테스트**
     * `Assertion`을 이용하자. 이걸 사용해서 `assertEquals`함수 사용시 두개 인자가 동일한지 봐준다
       * 안동일하면 오류, 동일하면 아무일도 없음
+      * `Assertions.assertEquals(member, memberRepository.findOne(saveId));`
       * `Assertions.assertThat(member).isEqualeTo(result);` 이것도 위처럼 사용된다.
-  * 예외 테스트
+  * **예외 테스트**
     * try, catch보다 간편하게 `assertThrows`를 사용해서 일부러 예외를 터트려서 테스트 하는것이 있다.
+    * 또는 try, catch대신 `@Test(expected = IllegalStateException.class)` 를 선언하면 알아서 해당 예외 터질 때 종료해줌
+      * 만약 해당 예외가 안터지면 그다음 코드들이 계속 실행됨. 그 코드는 아래 형태로 작성
+      * `Assertions.fail("예외가 발생해야 한다.");` 예외가 안터져서 오히려 에러라고 로그를 남겨줌
 
 * **ETC**
+
   * @Slf4j : 로그를 바로 log로 사용 가능
   * @NotEmpty("에러 메세지 관련")
   * @Data -> 롬복
     * @Getter, @Setter, @ToString, @EqualsAndHashCode, @RequiredArgsConstructor 적용
   * @SpringBootApplication : 톰캣 내장(서버)
+  * @Valid + @NotEmpty(message="회원 정보필수") 이런식으로 같이 사용
+    * 예전꺼라서 의존성 추가 필수
+    * `implementation 'org.springframework.boot:spring-boot-starter-validation'`
+  * @AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언
+    * 참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것
+
+  
