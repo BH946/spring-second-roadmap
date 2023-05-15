@@ -466,4 +466,28 @@
   * @AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언
     * 참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것
 
-  
+
+<br>
+
+**리팩토링**
+
+* **AOP(공통 해결 관심사)**
+  * **일반 상황**
+    * 만들때 : @Aspect 사용 및 스프링 빈에 등록 필수
+    * 사용할때 : @Around로 원하는 곳에 적용
+    * 동작 : 프록시 객체 생성 -> 실제 객체 생성 의 흐름
+  * **웹의 경우**
+    * **스프링 인터셉터** 사용 권장 및 **ArgumentResolver** 활용 권장
+
+* **예외처리 - Spring Exception**
+  * **html**
+    * 자동으로 에러에 필요한 로직을 등록하므로 바로 활용가능
+    * `ErrorPage, BasicErrorController` 자동 등록 및 `/error` 경로로 기본설정
+    * `BasicErrorController` 는 `ErrorPage` 에서 등록한 `/error` 를 매핑해서 처리하는 컨트롤러
+  * **API**
+    * API는 html보다 예외처리가 세부적이므로 `ExceptionHandlerExceptionResolver` 로 해결
+    * 즉, 자동 등록한 에러 로직을 사용하지 않고 `@ExceptionHandler, @RestConrollerAdvice` 사용
+      * `@RestControllerAdvice` 를 통해서 컨트롤러를 "기존코드, 예외코드" 나눠서 분류 가능
+
+
+
