@@ -95,7 +95,7 @@
 - 옵션 중에서 **cascade** 사용 유무는 관계가 **완전 종속일때만** 사용 (연관된 데이터 연쇄적 변경 효과)
 
   - cascade는 영속성 전이를 하므로, 연관관계 매핑과는 전혀 관계 없음 
-  - 단지 이를 사용하면 생명주기를 같이 하는것
+  - 단지 이를 사용하면 **생명주기를 같이** 하는것
 
 - **추가정보**
 
@@ -255,12 +255,16 @@
 **엔티티 조회 에러 해결(참고)**
 
 * **엔티티를 외부에 노출하면서 발생하는 문제들이라서 사실상 이부분을 알필요는 없다.**
-
 * **@JsonIgnore : 양방향 무한 반복의 문제를 해결**
   * **하지만 지양하고 DTO 방식으로 해결을 지향**
-
 * **Hibernate5Module을 @Bean 등록 까지 해주면 Lazy 문제도 해결** 
   * **하지만 이 또한 지양하고 LAZY 강제 초기화로 다 해결**
+  * 예로 전체 엔티티를 LAZY로 개발한 후 Order를 조회할 때?? 단, Order 엔 Member가 있음.
+    * 이때, LAZY 강제 초기화를 안하면 Member를 null로 나타낸다는게 LAZY 문제라는것.
+      * **해결방안**으로 **`order.getMember().getName()` 같은 코드를 추가해야 LAZY 강제 초기화**를 진행
+      * **이 경우 Member를 select하는 쿼리를 추가로 전송하는 행동을 해준다.**
+      * **단, 이 경우엔 `fetch join` (꼭 `distinct`도 사용 권장) 을 꼭 함께 사용해줘야 추가 전송하는 쿼리를 막고 1개의 쿼리만으로 모든걸 해결 할 수 있다. => 매우중요!!**
+        * **TIP : `ToOne` 관계는 모두 페치조인, 컬렉션 엔티티 조회만 그대로 지연 로딩으로 조회한다.**
 
 <br>
 
@@ -401,7 +405,7 @@
 
   * @RequestBody, @ResponseBody : HttpEntity 처럼 HTTP 메시지 **컨버터**가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 자동 변환!!
 
-    * 요청파라미터 @RequestParam, @modelAttribute 랑은 전혀 관계없으니까 혼동 X
+    * 요청파라미터 @RequestParam, @ModelAttribute 랑은 전혀 관계없으니까 혼동 X
 
     * 요청오는건 RequestBody, 응답으론 ResponseBody
 
@@ -414,6 +418,7 @@
       }
       ```
 
+      * @RequestBody를 활용할거면 꼭 Dto 형태 타입으로 인수 받을것(경험상)
       * 요청으로 들어오는 json 데이터를 @RequestBody HelloData data 로 인해 Hellodata 객체로 바꾸고,
       * 반환 타입을 String이 아닌 HelloData로 하면 @ResponseBody 로 인해 return할때 응답body에 문자로 넣어준다 했는데 덕분에 json로 집어넣어준다.
       * 즉, json(요청)->객체->json(응답) 로 동작한다.
@@ -478,7 +483,8 @@
     * 동작 : 프록시 객체 생성 -> 실제 객체 생성 의 흐름
   * **웹의 경우**
     * **스프링 인터셉터** 사용 권장 및 **ArgumentResolver** 활용 권장
-
+      * **ArgumentResolver** 를 통해서 공통 작업할 때 컨트롤러를 더욱 편리하게 사용 가능
+  
 * **예외처리 - Spring Exception**
   * **html**
     * 자동으로 에러에 필요한 로직을 등록하므로 바로 활용가능
@@ -489,5 +495,7 @@
     * 즉, 자동 등록한 에러 로직을 사용하지 않고 `@ExceptionHandler, @RestConrollerAdvice` 사용
       * `@RestControllerAdvice` 를 통해서 컨트롤러를 "기존코드, 예외코드" 나눠서 분류 가능
 
+<br><br>
 
+# MVC 패턴(API) 경험적 체크리스트
 

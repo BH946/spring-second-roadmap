@@ -64,7 +64,7 @@ public class OrderRepository {
         return query.getResultList();
     }
 
-    // 페치조인으로 order -> member , order -> delivery 는이미 조회된 상태이므로 지연로딩X
+    // 페치조인으로 order -> member , order -> delivery 는 이미 조회된 상태이므로 지연로딩X
     public List<Order> findAllWithMemberDelivery() {
         return em.createQuery(
                 "select o from Order o" +
