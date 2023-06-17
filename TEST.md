@@ -1,6 +1,6 @@
 
 
-# Working with Cloud Build
+# Deploying Google Kubernetes Engine
 
 1 hour5 Credits
 
@@ -10,18 +10,17 @@ Rate Lab
 
 ## Overview
 
-In this lab you will build a Docker container image from provided code and a Dockerfile using Cloud Build. You will then upload the container to the Container Registry.
+In this lab, you use the Google Cloud Console to build GKE clusters and deploy a sample Pod.
 
 ## Objectives
 
 In this lab, you learn how to perform the following tasks:
 
-- Use Cloud Build to build and push containers
-- Use Container Registry to store and deploy containers
+- Use the Google Cloud Console to build and manipulate GKE clusters
+- Use the Google Cloud Console to deploy a Pod
+- Use the Google Cloud Console to examine the cluster and Pods
 
 ## Lab setup
-
-### Access the lab
 
 For each lab, you get a new Google Cloud project and set of resources for a fixed time at no cost.
 
@@ -39,305 +38,96 @@ For each lab, you get a new Google Cloud project and set of resources for a fixe
 
 After you complete the initial sign-in steps, the project dashboard opens.
 
-## Task 1. Confirm that needed APIs are enabled
+## Task 1. Deploy GKE clusters
 
-1. Make a note of the name of your Google Cloud project. This value is shown in the top bar of the Google Cloud Console. It will be of the form `qwiklabs-gcp-` followed by hexadecimal numbers.
-2. In the Google Cloud Console, on the **Navigation menu**(![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **APIs & Services**.
-3. Click **Enable APIs and Services**.
-4. In the **Search for APIs & Services** box, enter `Cloud Build`.
-5. In the resulting card for the Cloud Build API, if you do not see a message confirming that the Cloud Build API is enabled, click the `ENABLE` button.
-6. Use the Back button to return to the previous screen with a search box. In the search box, enter `Container Registry`.
-7. In the resulting card for the Google Container Registry API, if you do not see a message confirming that the Container Registry API is enabled, click the `ENABLE` button.
+In this task, you use the Google Cloud Console and Cloud Shell to deploy GKE clusters.
 
-## Task 2. Building containers with DockerFile and Cloud Build
+### Use the Google Cloud Console to deploy a GKE cluster
 
-You can write build configuration files to provide instructions to Cloud Build as to which tasks to perform when building a container. These build files can fetch dependencies, run unit tests, analyses and more. In this task, you'll create a DockerFile and use it as a build configuration script with Cloud Build. You will also create a simple shell script (quickstart.sh) which will represent an application inside the container.
+1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Clusters**.
+2. Click **Create** to begin creating a GKE cluster. Click **configure** for **Standard: You manage your cluster**.
+3. Examine the console UI and the controls to change the cluster name, the cluster location, Kubernetes version, the number of nodes, and the node resources such as the machine type in the default node pool.
 
-1. On the Google Cloud Console title bar, click **Activate Cloud Shell**.
-2. When prompted, click **Continue**.
+Clusters can be created across a region or in a single zone. A single zone is the default. When you deploy across a region the nodes are deployed to three separate zones and the total number of nodes deployed will be three times higher.
 
-Cloud Shell opens at the bottom of the Google Cloud Console window.
+1. Change the cluster name to **standard-cluster-1** and zone to **us-central1-a**. Leave all the values at their defaults and click **Create**.
 
-1. Create an empty `quickstart.sh` file using the nano text editor:
+The cluster begins provisioning.
 
-```
-nano quickstart.sh
-```
+**Note:** You need to wait a few minutes for the cluster deployment to complete.
 
-Copied!
+When provisioning is complete, the **Kubernetes Engine > Clusters** page looks like the screenshot:
 
-content_copy
-
-1. Add the following lines in to the `quickstart.sh` file:
-
-```
-#!/bin/sh
-echo "Hello, world! The time is $(date)."
-```
-
-Copied!
-
-content_copy
-
-1. Save the file and close nano by pressing the **CTRL+X** key, then press **Y** and **Enter**.
-2. Create an empty `Dockerfile` file using the nano text editor:
-
-```
-nano Dockerfile
-```
-
-Copied!
-
-content_copy
-
-1. Add the following Dockerfile command:
-
-```
-FROM alpine
-```
-
-Copied!
-
-content_copy
-
-This instructs the build to use the Alpine Linux base image.
-
-1. Add the following Dockerfile command to the end of the Dockerfile:
-
-```
-COPY quickstart.sh /
-```
-
-Copied!
-
-content_copy
-
-This adds the `quickstart.sh` script to the / directory in the image.
-
-1. Add the following Dockerfile command to the end of the Dockerfile:
-
-```
-CMD ["/quickstart.sh"]
-```
-
-Copied!
-
-content_copy
-
-This configures the image to execute the `/quickstart.sh` script when the associated container is created and run.
-
-The Dockerfile should now look like:
-
-```
-FROM alpine
-COPY quickstart.sh /
-CMD ["/quickstart.sh"]
-```
-
-Copied!
-
-content_copy
-
-1. Save the file and close nano by pressing the **CTRL+X** key, then press **Y** and **Enter**.
-2. In Cloud Shell, run the following command to make the `quickstart.sh` script executable:
-
-```
-chmod +x quickstart.sh
-```
-
-Copied!
-
-content_copy
-
-1. In Cloud Shell, run the following command to build the Docker container image in Cloud Build:
-
-```
-gcloud builds submit --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/quickstart-image .
-```
-
-Copied!
-
-content_copy
-
-**Note:** Don't miss the dot (".") at the end of the command. The dot specifies that the source code is in the current working directory at build time.
-
-When the build completes, your Docker image is built and pushed to the Container Registry.
-
-1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Container Registry** > **Images**.
-
-The `quickstart-image` Docker image appears in the list
-
-## Task 3. Building containers with a build configuration file and Cloud Build
-
-Cloud Build also supports custom build configuration files. In this task you will incorporate an existing Docker container using a custom YAML-formatted build file with Cloud Build.
-
-1. In Cloud Shell enter the following command to clone the repository to the lab Cloud Shell:
-
-```
-git clone https://github.com/GoogleCloudPlatform/training-data-analyst
-```
-
-Copied!
-
-content_copy
-
-1. Create a soft link as a shortcut to the working directory:
-
-```
-ln -s ~/training-data-analyst/courses/ak8s/v1.1 ~/ak8s
-```
-
-Copied!
-
-content_copy
-
-1. Change to the directory that contains the sample files for this lab:
-
-```
-cd ~/ak8s/Cloud_Build/a
-```
-
-Copied!
-
-content_copy
-
-A sample custom cloud build configuration file called `cloudbuild.yaml` has been provided for you in this directory as well as copies of the `Dockerfile` and the `quickstart.sh` script you created in the first task.
-
-1. In Cloud Shell, execute the following command to view the contents of `cloudbuild.yaml`:
-
-```
-cat cloudbuild.yaml
-```
-
-Copied!
-
-content_copy
-
-You will see the following:
-
-```
-steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/quickstart-image', '.' ]
-images:
-- 'gcr.io/$PROJECT_ID/quickstart-image'
-```
-
-This file instructs Cloud Build to use Docker to build an image using the Dockerfile specification in the current local directory, tag it with `gcr.io/$PROJECT_ID/quickstart-image` (`$PROJECT_ID` is a substitution variable automatically populated by Cloud Build with the project ID of the associated project) and then push that image to Container Registry.
-
-1. In Cloud Shell, execute the following command to start a Cloud Build using `cloudbuild.yaml` as the build configuration file:
-
-```
-gcloud builds submit --config cloudbuild.yaml .
-```
-
-Copied!
-
-content_copy
-
-The build output to Cloud Shell should be the same as before. When the build completes, a new version of the same image is pushed to Container Registry.
-
-1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Container Registry** > **Images** and then click `quickstart-image`.
-
-Two versions of `quickstart-image` are now in the list.
+![Clusters page](https://cdn.qwiklabs.com/syYSoVJHBotCDpSDi4OSQB1KleBOUbhmJXxmXfvrhpI%3D)
 
 Click *Check my progress* to verify the objective.
 
-Build two Container images in Cloud Build.
+Deploy GKE cluster
 
 Check my progress
 
 
 
-1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Cloud Build** > **History**.
+1. Click the cluster name **standard-cluster-1** to view the cluster details
+2. You can scroll down the page to view more details.
+3. Click the **Storage** and **Nodes** tabs under the cluster name (standard-cluster-1) at the top to view more of the cluster details.
 
-Two builds appear in the list.
+## Task 2. Modify GKE clusters
 
-1. Click the build ID for the build at the top of the list.
+It is easy to modify many of the parameters of existing clusters using either the Google Cloud Console or Cloud Shell. In this task, you use the Google Cloud Console to modify the size of GKE clusters.
 
-The details of the build, including the build log, are displayed.
+1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Clusters** > **standard-cluster-1**, click **NODES** at the top of the details page.
+2. In **Node Pools** section, click **default-pool**.
+3. In the Google Cloud Console, click **RESIZE** at the top of the **Node Pool Details** page.
+4. Change the number of nodes from 3 to 4 and click **RESIZE**.
 
-## Task 4. Building and testing containers with a build configuration file and Cloud Build
+![Resize button on the Node Pool Details page](https://cdn.qwiklabs.com/c%2Bnek4K0%2BlE107Y%2FsEtEcUQ7mp95gW2veEn5SmTGGj8%3D)
 
-The true power of custom build configuration files is their ability to perform other actions, in parallel or in sequence, in addition to simply building containers: running tests on your newly built containers, pushing them to various destinations, and even deploying them to Kubernetes Engine.
+1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Clusters**.
 
-In this lab, we will see a simple example: a build configuration file that tests the container it built and reports the result to its calling environment.
-
-1. In Cloud Shell, change to the directory that contains the sample files for this lab:
-
-```
-cd ~/ak8s/Cloud_Build/b
-```
-
-Copied!
-
-content_copy
-
-As before, the `quickstart.sh` script and the sample custom cloud build configuration file called `cloudbuild.yaml` has been provided for you in this directory. These have been slightly modified to demonstrate Cloud Build's ability to test the containers it has built.
-
-There is also a Dockerfile present, which is identical to the one used for the previous task.
-
-1. In Cloud Shell, execute the following command to view the contents of `cloudbuild.yaml`:
-
-```
-cat cloudbuild.yaml
-```
-
-Copied!
-
-content_copy
-
-You will see the following:
-
-```
-steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/quickstart-image', '.' ]
-- name: 'gcr.io/$PROJECT_ID/quickstart-image'
-  args: ['fail']
-images:
-- 'gcr.io/$PROJECT_ID/quickstart-image
-```
-
-In addition to its previous actions, this build configuration file runs the `quickstart-image` it has created. In this task, the `quickstart.sh` script has been modified so that it simulates a test failure when an argument `['fail']` is passed to it.
-
-1. In Cloud Shell, execute the following command to start a Cloud Build using `cloudbuild.yaml` as the build configuration file:
-
-```
-gcloud builds submit --config cloudbuild.yaml .
-```
-
-Copied!
-
-content_copy
-
-You will see output from the command that ends with text like this:
-
-**Output**
-
-```
-Finished Step #1
-ERROR
-ERROR: build step 1 "gcr.io/ivil-charmer-227922klabs-gcp-49ab2930eea05/quickstart-image" failed: exit status 127
----------------------------------------------------------------------------------------------------------
-ERROR: (gcloud.builds.submit) build f3e94c28-fba4-4012-a419-48e90fca7491 completed with status "FAILURE"
-```
-
-1. Confirm that your command shell knows that the build failed:
-
-```
-echo $?
-```
-
-Copied!
-
-content_copy
-
-The command will reply with a non-zero value. If you had embedded this build in a script, your script would be able to act up on the build's failure.
+When the operation completes, the **Kubernetes Engine > Clusters** page should show that standard-cluster-1 now has four nodes.
 
 Click *Check my progress* to verify the objective.
 
-Build and Test Containers with a build configuration file and Cloud Build
+Modify GKE clusters
 
 Check my progress
+
+
+
+## Task 3. Deploy a sample workload
+
+In this task, using the Google Cloud console you will deploy a Pod running the nginx web server as a sample workload.
+
+1. In the Google Cloud Console, on the **Navigation menu**(![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Workloads**.
+2. Click **Deploy** to show the Create a deployment wizard.
+3. Click **Continue** to accept the default container image, nginx:latest, which deploys 3 Pods each with a single container running the latest version of nginx.
+4. Scroll to the bottom of the window and click the **Deploy** button leaving the **Configuration** details at the defaults.
+5. When the deployment completes your screen will refresh to show the details of your new nginx deployment.
+
+Click *Check my progress* to verify the objective.
+
+Deploy a sample nginx workload
+
+Check my progress
+
+
+
+## Task 4. View details about workloads in the Google Cloud Console
+
+In this task, you view details of your GKE workloads directly in the Google Cloud Console.
+
+1. In the Google Cloud Console, on the **Navigation menu** (![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Workloads**.
+2. In the Google Cloud Console, on the **Kubernetes Engine > Workloads** page, click **nginx-1**.
+
+This displays the overview information for the workload showing details like resource utilization charts, links to logs, and details of the Pods associated with this workload.
+
+1. In the Google Cloud Console, click the **Details** tab for the **nginx-1** workload. The Details tab shows more details about the workload including the Pod specification, number and status of Pod replicas and details about the horizontal Pod autoscaler.
+2. Click the **Revision History** tab. This displays a list of the revisions that have been made to this workload.
+3. Click the **Events** tab. This tab lists events associated with this workload.
+4. And then the **YAML** tab. This tab provides the complete YAML file that defines these components and full configuration of this sample workload.
+5. Still in the Google Cloud Console's **Details** tab for the **nginx-1** workload, click the **Overview** tab, scroll down to the **Managed Pods** section and click the name of one of the Pods to view the details page for that Pod.
+6. The Pod details page provides information on the Pod configuration and resource utilization and the node where the Pod is running.
+7. In the **Pod details** page, you can click the Events and Logs tabs to view event details and links to container logs in Cloud Operations.
+8. Click the **YAML** tab to view the detailed YAML file for the Pod configuration.
 
