@@ -1,23 +1,24 @@
-# Creating Google Kubernetes Engine Deployments
+# Configuring Persistent Storage for Google Kubernetes Engine
 
 1 hour5 Credits
 
 ## Overview
 
-In this lab, you explore the basics of using deployment manifests. Manifests are files that contain configurations required for a deployment that can be used across different Pods. Manifests are easy to change.
+In this lab, you set up PersistentVolumes and PersistentVolumeClaims. PersistentVolumes are storage that is available to a Kubernetes cluster. PersistentVolumeClaims enable Pods to access PersistentVolumes. Without PersistentVolumeClaims Pods are mostly ephemeral, so you should use PersistentVolumeClaims for any data that you expect to survive Pod scaling, updating, or migrating.
 
 ## Objectives
 
 In this lab, you learn how to perform the following tasks:
 
-- Create deployment manifests, deploy to cluster, and verify Pod rescheduling as nodes are disabled
-- Trigger manual scaling up and down of Pods in deployments
-- Trigger deployment rollout (rolling update to new version) and rollbacks
-- Perform a Canary deployment
+- Create manifests for PersistentVolumes (PVs) and PersistentVolumeClaims (PVCs) for Google Cloud persistent disks (dynamically created or existing)
+- Mount Google Cloud persistent disk PVCs as volumes in Pods
+- Use manifests to create StatefulSets
+- Mount Google Cloud persistent disk PVCs as volumes in StatefulSets
+- Verify the connection of Pods in StatefulSets to particular PVs as the Pods are stopped and restarted
 
 ## Lab setup
 
-### **Access the lab**
+### Access the lab
 
 For each lab, you get a new Google Cloud project and set of resources for a fixed time at no cost.
 
@@ -32,8 +33,6 @@ For each lab, you get a new Google Cloud project and set of resources for a fixe
 7. Accept the terms and skip the recovery resource page.
 
 **Note:** Do not click **End Lab** unless you have finished the lab or want to restart it. This clears your work and removes the project.
-
-After you complete the initial sign-in steps, the project dashboard appears.
 
 ### Activate Google Cloud Shell
 
@@ -103,11 +102,11 @@ project = qwiklabs-gcp-44776a13dea667a6
 
 **Note:** Full documentation of **gcloud** is available in the [gcloud CLI overview guide ](https://cloud.google.com/sdk/gcloud).
 
-## Task 1. Create deployment manifests and deploy to the cluster
+## Task 1. Create PVs and PVCs
 
-In this task, you create a deployment manifest for a Pod inside the cluster.
+In this task, you create a PVC, which triggers Kubernetes to automatically create a PV.
 
-### **Connect to the lab GKE cluster**
+### Connect to the lab GKE cluster
 
 1. In Cloud Shell, type the following command to set the environment variable for the zone and cluster name:
 
@@ -120,7 +119,7 @@ Copied!
 
 content_copy
 
-1. Configure kubectl tab completion in Cloud Shell:
+1. Configure tab completion for the kubectl command-line tool:
 
 ```
 source <(kubectl completion bash)
@@ -130,7 +129,7 @@ Copied!
 
 content_copy
 
-1. In Cloud Shell, configure access to your cluster for the kubectl command-line tool, using the following command:
+1. Configure access to your cluster for kubectl:
 
 ```
 gcloud container clusters get-credentials $my_cluster --zone $my_zone
@@ -140,7 +139,26 @@ Copied!
 
 content_copy
 
-1. In Cloud Shell enter the following command to clone the repository to the lab Cloud Shell:
+### Create and apply a manifest with a PVC
+
+Most of the time, you don't need to directly configure PV objects or create Compute Engine persistent disks. Instead, you can create a PVC, and Kubernetes automatically provisions a persistent disk for you.
+
+You create the PVC in this task using the `pvc-demo.yaml` manifest file that has been provided for you. This creates a 30 gigabyte PVC called `hello-web-disk` that can be mounted as a read-write volume on a single node at a time.
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hello-web-disk
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+```
+
+1. In Cloud Shell, enter the following command to clone the repository to the lab Cloud Shell:
 
 ```
 git clone https://github.com/GoogleCloudPlatform/training-data-analyst
@@ -163,500 +181,592 @@ content_copy
 1. Change to the directory that contains the sample files for this lab:
 
 ```
-cd ~/ak8s/Deployments/
+cd ~/ak8s/Storage/
 ```
 
 Copied!
 
 content_copy
 
-### **Create a deployment manifest**
-
-You will create a deployment using a sample deployment manifest called `nginx-deployment.yaml` that has been provided for you. This deployment is configured to run three Pod replicas with a single nginx container in each Pod listening on TCP port 80:
+1. To show that you currently have no PVCs, execute the following command:
 
 ```
-apiVersion: apps/v1
-kind: Deployment
+kubectl get persistentvolumeclaim
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+No resources found in default namespace.
+```
+
+1. To create the PVC, execute the following command:
+
+```
+kubectl apply -f pvc-demo.yaml
+```
+
+Copied!
+
+content_copy
+
+1. To show your newly created PVC, execute the following command:
+
+```
+kubectl get persistentvolumeclaim
+```
+
+Copied!
+
+content_copy
+
+**Partial output:**
+
+```
+NAME           STATUS    VOLUME       CAPACITY   ACCESS MODES   STORAGE CLASS   AGE
+hello-web-disk Pending                                          standard-rwo    15s
+```
+
+**Note:** The status will remain pending until after the next step.
+
+Click **Check my progress** to verify the objective.
+
+Create PVs and PVCs
+
+Check my progress
+
+## Task 2. Mount and verify Google Cloud persistent disk PVCs in Pods
+
+In this task, you attach your persistent disk PVC to a Pod. You mount the PVC as a volume as part of the manifest for the Pod.
+
+### Mount the PVC to a Pod
+
+The manifest file `pod-volume-demo.yaml` deploys an nginx container, attaches the `pvc-demo-volume` to the Pod and mounts that volume to the path `/var/www/html` inside the nginx container. Files saved to this directory inside the container will be saved to the persistent volume and persist even if the Pod and the container are shutdown and recreated.
+
+```
+kind: Pod
+apiVersion: v1
 metadata:
-  name: nginx-deployment
-  labels:
-    app: nginx
+  name: pvc-demo-pod
 spec:
+  containers:
+    - name: frontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: pvc-demo-volume
+  volumes:
+    - name: pvc-demo-volume
+      persistentVolumeClaim:
+        claimName: hello-web-disk
+```
+
+1. To create the Pod with the volume, execute the following command:
+
+```
+kubectl apply -f pod-volume-demo.yaml
+```
+
+Copied!
+
+content_copy
+
+1. List the Pods in the cluster:
+
+```
+kubectl get pods
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+NAME          READY    STATUS              RESTARTS   AGE
+pvc-demo-pod  0/1      ContainerCreating   0          18s
+```
+
+If you do this quickly after creating the Pod, you will see the status listed as "ContainerCreating" while the volume is mounted before the status changes to "Running".
+
+1. To verify the PVC is accessible within the Pod, you must gain shell access to your Pod. To start the shell session, execute the following command:
+
+```
+kubectl exec -it pvc-demo-pod -- sh
+```
+
+Copied!
+
+content_copy
+
+1. To create a simple text message as a web page in the Pod enter the following commands:
+
+```
+echo Test webpage in a persistent volume!>/var/www/html/index.html
+chmod +x /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+1. Verify the text file contains your message:
+
+```
+cat /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+Test webpage in a persistent volume!
+```
+
+1. Enter the following command to leave the interactive shell on the nginx container:
+
+```
+exit
+```
+
+Copied!
+
+content_copy
+
+### Test the persistence of the PV
+
+You will now delete the Pod from the cluster, confirm that the PV still exists, then redeploy the Pod and verify the contents of the PV remain intact.
+
+1. Delete the pvc-demo-pod:
+
+```
+kubectl delete pod pvc-demo-pod
+```
+
+Copied!
+
+content_copy
+
+1. List the Pods in the cluster:
+
+```
+kubectl get pods
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+No resources found in default namespace.
+```
+
+There should be no Pods on the cluster.
+
+1. To show your PVC, execute the following command:
+
+```
+kubectl get persistentvolumeclaim
+```
+
+Copied!
+
+content_copy
+
+**Partial output:**
+
+```
+NAME           STATUS    VOLUME       CAPACITY   ACCESS MODES   STORAGE CLASS   AGE
+hello-web-disk Bound     pvc-8...34   30Gi       RWO            standard-rwo    22m
+```
+
+Your PVC still exists, and was not deleted when the Pod was deleted.
+
+1. Redeploy the pvc-demo-pod:
+
+```
+kubectl apply -f pod-volume-demo.yaml
+```
+
+Copied!
+
+content_copy
+
+1. List the Pods in the cluster:
+
+```
+kubectl get pods
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+NAME           READY     STATUS    RESTARTS   AGE
+pvc-demo-pod   1/1       Running   0          15s
+```
+
+The Pod will deploy and the status will change to "Running" faster this time because the PV already exists and does not need to be created.
+
+1. To verify the PVC is still accessible within the Pod, you must gain shell access to your Pod. To start the shell session, execute the following command:
+
+```
+kubectl exec -it pvc-demo-pod -- sh
+```
+
+Copied!
+
+content_copy
+
+1. To verify that the text file still contains your message execute the following command:
+
+```
+cat /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+Test webpage in a persistent volume!
+```
+
+The contents of the persistent volume were not removed, even though the Pod was deleted from the cluster and recreated.
+
+1. Enter the following command to leave the interactive shell on the nginx container:
+
+```
+exit
+```
+
+Copied!
+
+content_copy
+
+Click **Check my progress** to verify the objective.
+
+Mount and verify Google Cloud persistent disk PVCs in Pods
+
+Check my progress
+
+## Task 3. Create StatefulSets with PVCs
+
+In this task, you use your PVC in a StatefulSet. A StatefulSet is like a Deployment, except that the Pods are given unique identifiers.
+
+### Release the PVC
+
+1. Before you can use the PVC with the statefulset, you must delete the Pod that is currently using it. Execute the following command to delete the Pod:
+
+```
+kubectl delete pod pvc-demo-pod
+```
+
+Copied!
+
+content_copy
+
+1. Confirm the Pod has been removed:
+
+```
+kubectl get pods
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+No resources found in default namespace.
+```
+
+### Create a StatefulSet
+
+The manifest file `statefulset-demo.yaml` creates a StatefulSet that includes a LoadBalancer service and three replicas of a Pod containing an nginx container and a volumeClaimTemplate for 30 gigabyte PVCs with the name `hello-web-disk`. The nginx containers mount the PVC called `hello-web-disk` at `/var/www/html` as in the previous task.
+
+```
+kind: Service
+apiVersion: v1
+metadata:
+  name: statefulset-demo-service
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9376
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-demo
+spec:
+  selector:
+    matchLabels:
+      app: MyApp
+  serviceName: statefulset-demo-service
   replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        app: nginx
+        app: MyApp
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.7.9
+      - name: stateful-set-container
+        image: nginx
         ports:
         - containerPort: 80
-```
-
-Copied!
-
-content_copy
-
-1. To deploy your manifest, execute the following command:
-
-```
-kubectl apply -f ./nginx-deployment.yaml
-```
-
-Copied!
-
-content_copy
-
-1. To view a list of deployments, execute the following command:
-
-```
-kubectl get deployments
-```
-
-Copied!
-
-content_copy
-
-The output should look like this example.
-
-**Output:**
-
-```
-NAME               READY      UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   0/3        3            0           3s
-```
-
-1. Wait a few seconds, and repeat the command until the number listed for CURRENT deployments reported by the command matches the number of DESIRED deployments.
-
-The final output should look like the example.
-
-**Output:**
-
-```
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   3/3     3            3           42s
-```
-
-Click *Check my progress* to verify the objective.
-
-Create and deploy manifest nginx deployment
-
-Check my progress
-
-
-
-## Task 2. Manually scale up and down the number of Pods in deployments
-
-Sometimes, you want to shut down a Pod instance. Other times, you want ten Pods running. In Kubernetes, you can scale a specific Pod to the desired number of instances. To shut them down, you scale to zero.
-
-In this task, you scale Pods up and down in the Google Cloud Console and Cloud Shell.
-
-### **Scale Pods up and down in the console**
-
-1. Switch to the Google Cloud Console tab.
-2. On the **Navigation menu** ( ![Navigation menu icon](https://cdn.qwiklabs.com/tkgw1TDgj4Q%2BYKQUW4jUFd0O5OEKlUMBRYbhlCrF0WY%3D)), click **Kubernetes Engine** > **Workloads**.
-3. Click **nginx-deployment** (your deployment) to open the Deployment details page.
-4. At the top, click **ACTIONS > Scale > Edit Replicas**.
-5. Type **1** and click **SCALE**.
-
-This action scales down your cluster. You should see the Pod status being updated under **Managed Pods**. You might have to click **Refresh**.
-
-### **Scale Pods up and down in the shell**
-
-1. Switch back to the Cloud Shell browser tab.
-2. In the Cloud Shell, to view a list of Pods in the deployments, execute the following command:
-
-```
-kubectl get deployments
-```
-
-Copied!
-
-content_copy
-
-**Output:**
-
-```
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   1/1     1            1           3m
-```
-
-1. To scale the Pod back up to three replicas, execute the following command:
-
-```
-kubectl scale --replicas=3 deployment nginx-deployment
-```
-
-Copied!
-
-content_copy
-
-1. To view a list of Pods in the deployments, execute the following command:
-
-```
-kubectl get deployments
-```
-
-Copied!
-
-content_copy
-
-**Output:**
-
-```
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   3/3     3            3           4m
-```
-
-## Task 3. Trigger a deployment rollout and a deployment rollback
-
-A deployment's rollout is triggered if and only if the deployment's Pod template (that is, `.spec.template`) is changed, for example, if the labels or container images of the template are updated. Other updates, such as scaling the deployment, do not trigger a rollout.
-
-In this task, you trigger deployment rollout, and then you trigger deployment rollback.
-
-### **Trigger a deployment rollout**
-
-1. To update the version of nginx in the deployment, execute the following command:
-
-```
-kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.9.1 --record
-```
-
-Copied!
-
-content_copy
-
-This updates the container image in your Deployment to `nginx v1.9.1`.
-
-1. To view the rollout status, execute the following command:
-
-```
-kubectl rollout status deployment.v1.apps/nginx-deployment
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example.
-
-**Output:**
-
-```
-Waiting for rollout to finish: 1 out of 3 new replicas updated...
-Waiting for rollout to finish: 1 out of 3 new replicas updated...
-Waiting for rollout to finish: 1 out of 3 new replicas updated...
-Waiting for rollout to finish: 2 out of 3 new replicas updated...
-Waiting for rollout to finish: 2 out of 3 new replicas updated...
-Waiting for rollout to finish: 2 out of 3 new replicas updated...
-Waiting for rollout to finish: 1 old replicas pending termination...
-Waiting for rollout to finish: 1 old replicas pending termination...
-deployment "nginx-deployment" successfully rolled out
-```
-
-1. To verify the change, get the list of deployments:
-
-```
-kubectl get deployments
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example.
-
-**Output:**
-
-```
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   3/3     3            3           6m
-```
-
-Click *Check my progress* to verify the objective.
-
-Update version of nginx in the deployment
-
-Check my progress
-
-
-
-1. View the rollout history of the deployment:
-
-```
-kubectl rollout history deployment nginx-deployment
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example. Your output might not be an exact match.
-
-**Output:**
-
-```
-deployments "nginx-deployment"
-REVISION  CHANGE-CAUSE
-1         
-2         kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.9.1 --record=true
-```
-
-### Trigger a deployment rollback
-
-To roll back an object's rollout, you can use the `kubectl rollout undo` command.
-
-1. To roll back to the previous version of the nginx deployment, execute the following command:
-
-```
-kubectl rollout undo deployments nginx-deployment
-```
-
-Copied!
-
-content_copy
-
-1. View the updated rollout history of the deployment:
-
-```
-kubectl rollout history deployment nginx-deployment
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example. Your output might not be an exact match.
-
-**Output:**
-
-```
-deployments "nginx-deployment"
-REVISION  CHANGE-CAUSE
-2         kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.9.1 --record=true
-3         
-```
-
-1. View the details of the latest deployment revision:
-
-```
-kubectl rollout history deployment/nginx-deployment --revision=3
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example. Your output might not be an exact match but it will show that the current revision has rolled back to `nginx:1.7.9`.
-
-**Output:**
-
-```
-deployments "nginx-deployment" with revision #3
-Pod Template:
-  Labels:       app=nginx
-        pod-template-hash=3123191453
-  Containers:
-   nginx:
-    Image:      nginx:1.7.9
-    Port:       80/TCP
-    Host Port:  0/TCP
-    Environment:        
-    Mounts:     
-  Volumes:      
-```
-
-## Task 4. Define the service type in the manifest
-
-In this task, you create and verify a service that controls inbound traffic to an application. Services can be configured as ClusterIP, NodePort or LoadBalancer types. In this lab, you configure a LoadBalancer.
-
-### **Define service types in the manifest**
-
-A manifest file called `service-nginx.yaml` that deploys a LoadBalancer service type has been provided for you. This service is configured to distribute inbound traffic on TCP port 60000 to port 80 on any containers that have the label `app: nginx`.
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx
-spec:
-  type: LoadBalancer
-  selector:
-    app: nginx
-  ports:
-  - protocol: TCP
-    port: 60000
-    targetPort: 80
-```
-
-Copied!
-
-content_copy
-
-- In the Cloud Shell, to deploy your manifest, execute the following command:
-
-```
-kubectl apply -f ./service-nginx.yaml
-```
-
-Copied!
-
-content_copy
-
-This manifest defines a service and applies it to Pods that correspond to the selector. In this case, the manifest is applied to the nginx container that you deployed in task 1. This service also applies to any other Pods with the `app: nginx` label, including any that are created after the service.
-
-### **Verify the LoadBalancer creation**
-
-1. To view the details of the nginx service, execute the following command:
-
-```
-kubectl get service nginx
-```
-
-Copied!
-
-content_copy
-
-The output should look like the example.
-
-**Output:**
-
-```
-NAME      CLUSTER_IP      EXTERNAL_IP      PORT(S)   SELECTOR    AGE
-nginx     10.X.X.X        X.X.X.X          60000/TCP    run=nginx   1m
-```
-
-1. When the external IP appears, open `http://[EXTERNAL_IP]:60000/` in a new browser tab to see the server being served through network load balancing.
-
-**Note:** It may take a few seconds before the **ExternalIP** field is populated for your service. This is normal. Just re-run the `kubectl get services nginx` command every few seconds until the field is populated.
-
-Click *Check my progress* to verify the objective.
-
-Deploy manifest file that deploys LoadBalancer service type
-
-Check my progress
-
-
-
-## Task 5. Perform a canary deployment
-
-A canary deployment is a separate deployment used to test a new version of your application. A single service targets both the canary and the normal deployments. And it can direct a subset of users to the canary version to mitigate the risk of new releases.
-
-The manifest file `nginx-canary.yaml` that is provided for you deploys a single pod running a newer version of nginx than your main deployment. In this task, you create a canary deployment using this new deployment file:
-
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-canary
-  labels:
-    app: nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-        track: canary
-        Version: 1.9.1
+          name: http
+        volumeMounts:
+        - name: hello-web-disk
+          mountPath: "/var/www/html"
+  volumeClaimTemplates:
+  - metadata:
+      name: hello-web-disk
     spec:
-      containers:
-      - name: nginx
-        image: nginx:1.9.1
-        ports:
-        - containerPort: 80
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 30Gi
+```
+
+- To create the StatefulSet with the volume, execute the following command:
+
+```
+kubectl apply -f statefulset-demo.yaml
 ```
 
 Copied!
 
 content_copy
 
-The manifest for the nginx Service you deployed in the previous task uses a label selector to target the Pods with the `app: nginx` label. Both the normal deployment and this new canary deployment have the `app: nginx` label. Inbound connections will be distributed by the service to both the normal and canary deployment Pods. The canary deployment has fewer replicas (Pods) than the normal deployment, and thus it is available to fewer users than the normal deployment.
-
-1. Create the canary deployment based on the configuration file:
+**Output:**
 
 ```
-kubectl apply -f nginx-canary.yaml
+service "statefulset-demo-service" created
+statefulset.apps "statefulset-demo" created
 ```
 
-Copied!
+You now have a statefulset running behind a service named `statefulset-demo-service`.
 
-content_copy
+### Verify the connection of Pods in StatefulSets
 
-1. When the deployment is complete, verify that both the nginx and the nginx-canary deployments are present:
-
-```
-kubectl get deployments
-```
-
-Copied!
-
-content_copy
-
-1. Switch back to the browser tab that is connected to the external LoadBalancer service ip and refresh the page. You should continue to see the standard `Welcome to nginx` page.
-2. Switch back to the Cloud Shell and scale down the primary deployment to 0 replicas:
+1. Use "kubectl describe" to view the details of the StatefulSet:
 
 ```
-kubectl scale --replicas=0 deployment nginx-deployment
+kubectl describe statefulset statefulset-demo
 ```
 
 Copied!
 
 content_copy
 
-1. Verify that the only running replica is now the Canary deployment:
+Note the event status at the end of the output. The service and statefulset created successfully.
 
 ```
-kubectl get deployments
+Normal  SuccessfulCreate  10s   statefulset-controller
+Message: create Claim hello-web-disk-statefulset-demo-0 Pod statefulset-demo-0 in StatefulSet statefulset-demo success
+Normal  SuccessfulCreate  10s   statefulset-controller
+Message: create Pod statefulset-demo-0 in StatefulSet statefulset-demo successful
+```
+
+1. List the Pods in the cluster:
+
+```
+kubectl get pods
 ```
 
 Copied!
 
 content_copy
 
-1. Switch back to the browser tab that is connected to the external LoadBalancer service ip and refresh the page. You should continue to see the standard `Welcome to nginx` page showing that the Service is automatically balancing traffic to the canary deployment.
+**Output:**
 
-Click *Check my progress* to verify the objective.
+```
+NAME                 READY     STATUS    RESTARTS   AGE
+statefulset-demo-0   1/1       Running   0          6m
+statefulset-demo-1   1/1       Running   0          3m
+statefulset-demo-2   1/1       Running   0          2m
+```
 
-Create a Canary Deployment
+1. To list the PVCs, execute the following command:
+
+```
+kubectl get pvc
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+NAME                          STATUS    VOLUME           CAPACITY ACCESS
+hello-web-disk                Bound     pvc-86117ea6-...34   30Gi    RWO
+hello-web-disk-st...-demo-0   Bound     pvc-92d21d0f-...34   30Gi    RWO
+hello-web-disk-st...-demo-1   Bound     pvc-9bc84d92-...34   30Gi    RWO
+hello-web-disk-st...-demo-2   Bound     pvc-a526ecdf-...34   30Gi    RWO
+```
+
+The original hello-web-disk is still there and you can now see the individual PVCs that were created for each Pod in the new statefulset Pod.
+
+1. Use "kubectl describe" to view the details of the first PVC in the StatefulSet:
+
+```
+kubectl describe pvc hello-web-disk-statefulset-demo-0
+```
+
+Copied!
+
+content_copy
+
+Click **Check my progress** to verify the objective.
+
+Create StatefulSets with PVCs
 
 Check my progress
 
 
 
-### **Session affinity**
+## Task 4. Verify the persistence of Persistent Volume connections to Pods managed by StatefulSets
 
-The service configuration used in the lab does not ensure that all requests from a single client will always connect to the same Pod. Each request is treated separately and can connect to either the normal nginx deployment or to the nginx-canary deployment.
+In this task, you verify the connection of Pods in StatefulSets to particular PVs as the Pods are stopped and restarted.
 
-This potential to switch between different versions may cause problems if there are significant changes in functionality in the canary release. To prevent this you can set the `sessionAffinity` field to `ClientIP` in the specification of the service if you need a client's first request to determine which Pod will be used for all subsequent connections.
-
-For example:
+1. To verify that the PVC is accessible within the Pod, you must gain shell access to your Pod. To start the shell session, execute the following command:
 
 ```
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx
-spec:
-  type: LoadBalancer
-  sessionAffinity: ClientIP
-  selector:
-    app: nginx
-  ports:
-  - protocol: TCP
-    port: 60000
-    targetPort: 80
+kubectl exec -it statefulset-demo-0 -- sh
 ```
 
 Copied!
 
 content_copy
 
+1. Verify that there is no `index.html` text file in the `/var/www/html` directory:
+
+```
+cat /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+1. To create a simple text message as a web page in the Pod enter the following commands:
+
+```
+echo Test webpage in a persistent volume!>/var/www/html/index.html
+chmod +x /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+1. Verify the text file contains your message:
+
+```
+cat /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+Test webpage in a persistent volume!
+```
+
+1. Enter the following command to leave the interactive shell on the nginx container:
+
+```
+exit
+```
+
+Copied!
+
+content_copy
+
+1. Delete the Pod where you updated the file on the PVC:
+
+```
+kubectl delete pod statefulset-demo-0
+```
+
+Copied!
+
+content_copy
+
+1. List the Pods in the cluster:
+
+```
+kubectl get pods
+```
+
+Copied!
+
+content_copy
+
+You will see that the StatefulSet is automatically restarting the `statefulset-demo-0` Pod.
+
+**Note:** You need to wait until the Pod status shows that it is running again.
+
+1. Connect to the shell on the new `statefulset-demo-0` Pod:
+
+```
+kubectl exec -it statefulset-demo-0 -- sh
+```
+
+Copied!
+
+content_copy
+
+1. Verify that the text file still contains your message:
+
+```
+cat /var/www/html/index.html
+```
+
+Copied!
+
+content_copy
+
+**Output:**
+
+```
+Test webpage in a persistent volume!
+```
+
+The StatefulSet restarts the Pod and reconnects the existing dedicated PVC to the new Pod, ensuring that the data for that Pod is preserved.
+
+1. Enter the following command to leave the interactive shell on the nginx container:
+
+```
+exit
+```
+
+Copied!
+
+content_copy
