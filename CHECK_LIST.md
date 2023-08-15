@@ -28,7 +28,7 @@
   * 도메인 모델 분석(간략히)
   * 테이블 설계(DB)
   * 엔티티 설계(JPA)
-  * **ERDCloud 툴을 사용한 설계 => 테이블, 엔티티 설계 없애고 이걸로 통일할까...??**
+  * **ERDCloud 툴을 사용한 설계 => 테이블, 엔티티 설계를 여기서 한번에**
 * **코드 구현 (각 파트별 TDD도 함께)**
   * 도메인 구현 -> 엔티티를 의미하며, 모든 계층에서 사용
   * 레퍼지토리 구현 -> DB와 상호작용
@@ -164,6 +164,7 @@
       public void addStock(int quantity) {
           this.stockQuantity += quantity;
       }
+      // 업데이트의 경우에도 충분히 가능
       ```
   
   - **생성 메서드 사용 권장**
@@ -331,6 +332,20 @@
   * **DTO(Data Transfer Object)**는 **계층 간 데이터 교환을 하기 위해 사용하는 객체**로, 로직을 가지지 않는 순수한 데이터 객체
     * 메소드는 주로 getter, setter만 가짐
 
+* **캐시메모리 사용으로 최적화 -> 서비스 계층에서 사용(트랜잭션 쪽)**
+
+  * **[잘 정리한 사이트](https://adjh54.tistory.com/m/165) -> 사용법 다양함**
+  * **게시물 삭제, 수정, 추가에 @CachePut사용, 조회에 @Cacheable 사용함으로써 간단한 최적화 가능**
+  * 왜?? 사용하나?? 
+    * CSR같은경우 서버에서 API로직으로 JSON같은 데이터 넘겨주면 Client에서 React였으면 Redux, React-Native였으면 AsyncStorage 등등으로 기록해서 사용하므로 "데이터존재" 하면 API호출을 따로 하지않을 것
+    * 그러나, SSR같이 서버에서 구현할 경우 Thymeleaf에 React같은 Redux 같은기능이 없기때문에 서버단에서 완전히 해결해줘야 한다.
+      * **이때, "캐시메모리"를 활용해서 해결이 가능하다는 것**
+
+* **DB의 Limit, offset 을 활용한 페이징을 더 간단히 하는법**
+
+  * **Pageable 클래스 활용**
+  * 또한, 애초에 JPQL에서는 Limit와 Offset 키워드는 사용 불가하고 setFirstResult(), setMaxResults() 를 사용해야 함.
+
 
 <br>
 
@@ -392,6 +407,13 @@
 
     - @RequestParam : 기존 url 쿼리 파라미터 방식 : ?userId=userA
     - @PathVariable("itemId") : 최신 트랜드인 경로 변수 방식 : /mapping/userA
+      - 중요한점은 @PathVariable 로 매핑한 userA가 따로 Model을 활용하지 않아도,
+      - 백뿐만 아니라 프론트에서도 userA값을 사용가능하단 점이다.
+      - (이부분은 추측이지만, 자동으로 변수를 추가해서 같이 프론트로 반환되는게 아닐까)
+        - 스프링의 Model 클래스는 브라우저의 쿠키처럼 프론트에 같이 넘어가는 클래스
+        - 이 때문에 데이터를 주고받기 수월하단 장점을 가짐.
+      - 물론, 햇갈릴수도 있어서 그냥 **Model을 항상 데이터 보내는 용도로 사용**하고,
+      - **@PathVariable을 url로 받은 값을 사용하는 목적**으로 활용하는게 젤 좋아보임.
 
   * @ModelAttribute("from")
 
