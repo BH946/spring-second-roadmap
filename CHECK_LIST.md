@@ -332,20 +332,65 @@
   * **DTO(Data Transfer Object)**는 **계층 간 데이터 교환을 하기 위해 사용하는 객체**로, 로직을 가지지 않는 순수한 데이터 객체
     * 메소드는 주로 getter, setter만 가짐
 
-* **캐시메모리 사용으로 최적화 -> 서비스 계층에서 사용(트랜잭션 쪽)**
+* **"캐시메모리" 사용으로 최적화 -> 서비스 계층에서 사용(트랜잭션 쪽)**
 
   * **[잘 정리한 사이트](https://adjh54.tistory.com/m/165) -> 사용법 다양함**
   * **게시물 삭제, 수정, 추가에 @CachePut사용, 조회에 @Cacheable 사용함으로써 간단한 최적화 가능**
-  * 왜?? 사용하나?? 
+  * **왜?? 사용하나??** 
     * CSR같은경우 서버에서 API로직으로 JSON같은 데이터 넘겨주면 Client에서 React였으면 Redux, React-Native였으면 AsyncStorage 등등으로 기록해서 사용하므로 "데이터존재" 하면 API호출을 따로 하지않을 것
     * 그러나, SSR같이 서버에서 구현할 경우 Thymeleaf에 React같은 Redux 같은기능이 없기때문에 서버단에서 완전히 해결해줘야 한다.
       * **이때, "캐시메모리"를 활용해서 해결이 가능하다는 것**
+      * 서버 메모리에 저장하기 때문에 DB에 쿼리문 날릴필요 없기때문
 
-* **DB의 Limit, offset 을 활용한 페이징을 더 간단히 하는법**
+* **DB의 Limit, offset 을 활용한 "페이징"을 더 간단히 하는법**
 
-  * **Pageable 클래스 활용**
-  * 또한, 애초에 JPQL에서는 Limit와 Offset 키워드는 사용 불가하고 setFirstResult(), setMaxResults() 를 사용해야 함.
-
+  * 단, **JPQL**에서는 Limit와 Offset 키워드는 사용 불가하고 **setFirstResult(), setMaxResults()** 를 사용해야 함.
+  
+  * 또다른 방법은 제공해주는 클래스 사용 -> **Pageable 클래스 활용**
+  
+  * **왜?? 사용하나??**
+  
+    * **(SSR 가정) 1000개 게시물을 1page에 10개씩 보여주는 구조를 만든다면??**
+  
+      * 캐시메모리 사용 시 오히려 캐시메모리 사용량과 갱신에 많은 오버헤드 우려
+      * 대신 전체 게시물을 캐시메모리에 기록하는게 아니라 **"페이지별로" 캐싱**
+  
+    * 페이지별로 url(?page=1) 접근하면 해당 페이지별로 데이터를 가져올거고 이 데이터를 **@CachePut로 기록하고, @Cacheable로 조회**
+  
+      * 예로 `@CachePut(value = "posts", key = "#pageId")` 이런 형태
+  
+        * posts를 저장된 구간(키값)으로 보면되고, #pageId 를 파라미터로 들어온 pageId 속성값으로 매핑되며 해당 값을 키값으로 메모리에 기록
+        * 이 때문에 pageId로 이 값을 바로 찾을수도 있음
+  
+      * **그럼 page를 하나하나 100개 전부 접근하면 결국 1000개 데이터가 전부 캐시메모리에 기록되고, 오버헤드가 우려되지 않는가???**
+  
+        * 오래된 캐시를 제거하는 등의 방법으로 해결
+        * 또한, 애초에 그런 접근은 악의적인 접근으로써 따로 보안로직을 구현해야한다고 생각
+  
+      * **그럼 게시물이 삭제되거나 수정되면?? 특히 삭제되면 페이지별 데이터 10개 구성한것도 9개가 되고 갱신도 되어야할거고 그럴텐데 이건 어떻게 해결할건데??**
+  
+        * 위에서 pageId 별로 캐시메모리에 기록하기 때문에 해당 페이지만 수정하면 되는것(모든 페이지가 아니라)
+  
+        * 참고로 페이지별로 조회할때 `setFirstResult, setMaxResults` 를 pageId 를 이용해서 접근!
+  
+          ```java
+          public List<Item> findAllWithPage(int pageId) {
+              return em.createQuery("select i from Item i", Item.class)
+                  .setFirstResult((pageId-1)*10)
+                  .setMaxResults(((pageId-1)*10)+10)
+                  .getResultList(); // 해당 페이지(pageId) 데이터 조회
+          }
+          ```
+  
+      * **마지막으로 캐시 메모리에 데이터도 제한이 가능한가??**
+  
+        * 가능하며, 아래 예시를 참고
+  
+          ```properties
+          # application.properties
+          spring.cache.cache-names=posts
+          spring.cache.caffeine.spec=maximumSize=100 # 캐시 사이즈 설정 (예시로 최대 100개의 페이지를 캐시로 관리)
+          ```
 
 <br>
 
