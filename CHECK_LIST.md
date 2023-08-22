@@ -483,6 +483,21 @@
           log.info(helloData.getUsername()); // 바로 변수 사용 가능!!
       }
       ```
+      
+    * **참고로 특별한 사용법이 있는데 전역으로 Model에 항상 적용법**
+
+      * 물론 static으로 따로 구현해두는게 성능상 더 좋음
+
+      ```java
+      @ModelAttribute("regions") // regions 이름으로 Model에 넣음
+      public Map<String, String> regions() {
+          Map<String, String> regions = new LinkedHashMap<>();
+          regions.put("SEOUL", "서울");
+          regions.put("BUSAN", "부산");
+          regions.put("JEJU", "제주"); 
+      return regions;
+      }
+      ```
 
   * @RequestBody, @ResponseBody : HttpEntity 처럼 HTTP 메시지 **컨버터**가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 자동 변환!!
 
@@ -554,8 +569,8 @@
   * @Valid + @NotEmpty(message="회원 정보필수") 이런식으로 같이 사용
     * 예전꺼라서 의존성 추가 필수
     * `implementation 'org.springframework.boot:spring-boot-starter-validation'`
-  * @AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언
-    * 참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것
+  * **@AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언**
+    * **참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것**
 
 
 <br>
@@ -631,7 +646,6 @@
     * 혹시나 JSP 사용할 경우에는 이부분 기억해두자.
 * 타임리프 사용 선언
   * `<html xmlns:th="http://www.thymeleaf.org">`
-  * **참고로 `param` 으로 바로 파라미터값 불러올 수 있게 제공도 해주는 중**
 * 속성 변경
 
   * `th:href="@{/css/bootstrap.min.css}"`
@@ -666,3 +680,44 @@
 * 조건문 - th:if
 
   * `<h2 th:if="${param.status}" th:text="'저장 완료'"></h2>`
+* 변수선언 - th:with
+  * `th:with="first=${users[0]}"` -> frist 로 사용 가능
+* text, utext, [[...]], [(...)]
+  * text vs utext
+    - th:text = Hello \<b>Spring!\</b>
+    - th:utext = Hello **Spring!**
+
+  * [[...]] vs [(...)] -> 속성이 아니라 컨텐츠 안에서 직접 출력!
+    - [[...]] = Hello \<b>Spring!\</b>
+    - [(...)] = Hello **Spring!**
+
+* 편의 객체 제공 - param, session 등
+  * `param.title` 같이 파라미터 바로 접근 가능
+* 비교연산 - HTML 엔티티 주의!! 
+  * \> : gt 로 표기
+
+* Elvis 연산자 - `"${data}? : _"`
+  * data 있으면 true조건 실행
+
+* No-Operation : "_" 
+  * 마치 타임리프 실행안한것처럼 동작
+
+* 타임리프 파서 주석 : `<!--/* [[${data}]] */-->`
+  * 참고로 `/*사이에서 여러줄 가능*/`
+  * 렌더링때 삭제되는 것
+
+* 블록 - `<th:block>`
+  * `<th:block>` 는 타임리프가 제공하는 유일한 자체 "태그"
+  * **렌더링 할때는 아예 태그가 삭제**
+* fragment, JS
+  * fragment : 코드 재사용
+  * JS : javascript 에서 사용 가능
+* `<input>과<label>` 에서 th:for로 id값 연결 하는 편
+  * 동적 id 인식 - `#ids.prev()`
+
+<br>
+
+**타임리프 + 스프링 통합 문법**
+
+* **th:object, th:field, *{itemName} 활용**
+* **체크박스, 라디오버튼, 셀렉트 박스에서 활용**
