@@ -418,6 +418,10 @@
   * @PersistenceContext : 엔티티메니저( EntityManager ) 주입
   * @PersistenceUnit : 엔티티메니터팩토리( EntityManagerFactory ) 주입
   * **`@RequiredArgsConstructor` : lombok의 어노테이션인데 이것도 `엔티티매니저` 주입을 제공해주므로, 이것과 `final` 조합으로 리포지토리, 서비스 둘다에서 활용하는것을 권장**
+    * 예를 들면, @Repository 로 스프링 빈에 등록한 레퍼지토리를 다른 코드에서 사용하고 싶을때 "주입" 을 통해서 사용할 수 있다.
+    * @Autowired를 생성자위에 선언하면 "생성자 주입" 으로 사용할 수 있고, 필드위에 선언하면 "필드주입" 으로 사용할 수 있다.
+      * 여기서 "생성자 주입" 관점이 @RequiredArgsConstructor 로 대체 가능하다.
+      * 자동으로 생성자 생성해서 제공해준다.
   * 보통 만드는 DB와 연관 메서드 : save(), findOne(), findAll(), findByName() 등등...
     * `EntityManager` 의 함수들은 잘 구현되어있어서 `find()` 함수를 쓸때 값 없을때 null로 잘 반환해줌
     * **우리가 직접 쿼리문 날려서 `find()` 함수를 구현할 때는 이 null 처리를 잘 해줘야한다는점**
@@ -443,6 +447,9 @@
   * @RequestMapping, @GetMapping, @PostMapping 등등..  : HTTP 매핑
 
     * @RequestMapping을 클래스단에 @GetMapping, @PostMapping 을 메서드단에 사용 권장
+      * @RequestMapping은 전역으로 경로 지정하기 좋기 때문
+      * @RequestMapping 은 GET,POST,PUT... 등 전부 허용하기 때문
+    * @PostConstruct : 테스트용 데이터를 코드 실행하자마자 바로 넣을 수 있음 (테스트하기 수월!)
 
   * @RestController : 뷰로 반환하는게 아닌 HTTP Body에 반환값 기입반환 **(API 만들시 적극 권장)**
 
@@ -451,6 +458,11 @@
   * @PathVariable("userId"), @RequestParam => @PathVariable 방식 권장
 
     - @RequestParam : 기존 url 쿼리 파라미터 방식 : ?userId=userA
+      - 단, POST-HTML Form 방식도 body를 쓰지만 쿼리 파라미터 형식으로 저장되기 때문에 @RequestParam 을 사용 가능
+      - 또한, 생략도 가능한데 **본인은 넣는걸 권장** (이때 required=true)
+      - 기본값 설정도 가능 (defaultValue = "-1")!!
+        - 널 뿐만아니라 "/username=" 이렇게 "" 빈값으로 넘어온 데이터도 기본값을 설정해줌
+      - Map, MultiValueMap 형태로 값을 받아올수도 있음
     - @PathVariable("itemId") : 최신 트랜드인 경로 변수 방식 : /mapping/userA
       - 중요한점은 @PathVariable 로 매핑한 userA가 따로 Model을 활용하지 않아도,
       - 백뿐만 아니라 프론트에서도 userA값을 사용가능하단 점이다.
@@ -464,6 +476,8 @@
 
     * model.addAttribute 에도 담기고, form서밋 때 html에 있는 form 데이터를 매핑해서 변수에도 자동으로 담아줘서 변수선언도 따로 할 필요 없음
 
+    * 또한, @ModelAttribute 를 생략하고 바로 HelloData 가 와도 동일하게 가능
+
       ```java
       public String modelAttributeV1(@ModelAttribute HelloData helloData) {
           log.info(helloData.getUsername()); // 바로 변수 사용 가능!!
@@ -473,6 +487,8 @@
   * @RequestBody, @ResponseBody : HttpEntity 처럼 HTTP 메시지 **컨버터**가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 자동 변환!!
 
     * 요청파라미터 @RequestParam, @ModelAttribute 랑은 전혀 관계없으니까 혼동 X
+
+      * **왜냐하면, HTTP 메시지 Body 를 통해서 데이터가 넘어오는 경우이기 때문!!**
 
     * 요청오는건 RequestBody, 응답으론 ResponseBody
 
@@ -486,9 +502,12 @@
       ```
 
       * @RequestBody를 활용할거면 꼭 Dto 형태 타입으로 인수 받을것(경험상)
+        * ObjectMapper 필요없이 자동으로 바꿔줘서 편리
       * 요청으로 들어오는 json 데이터를 @RequestBody HelloData data 로 인해 Hellodata 객체로 바꾸고,
       * 반환 타입을 String이 아닌 HelloData로 하면 @ResponseBody 로 인해 return할때 응답body에 문자로 넣어준다 했는데 덕분에 json로 집어넣어준다.
       * 즉, json(요청)->객체->json(응답) 로 동작한다.
+
+    * 만약 @ResponseBody 가 없으면 뷰 리졸버가 실행 되어서 뷰를 찾아서 렌더링!!
 
   * 뷰 반환, 데이터 반환 정리
 
@@ -551,7 +570,6 @@
   * **웹의 경우**
     * **스프링 인터셉터** 사용 권장 및 **ArgumentResolver** 활용 권장
       * **ArgumentResolver** 를 통해서 공통 작업할 때 컨트롤러를 더욱 편리하게 사용 가능
-  
 * **예외처리 - Spring Exception**
   * **html**
     * 자동으로 에러에 필요한 로직을 등록하므로 바로 활용가능
@@ -562,7 +580,89 @@
     * 즉, 자동 등록한 에러 로직을 사용하지 않고 `@ExceptionHandler, @RestConrollerAdvice` 사용
       * `@RestControllerAdvice` 를 통해서 컨트롤러를 "기존코드, 예외코드" 나눠서 분류 가능
 
+<br>
+
+**기능 확장법**
+
+* 스프링은 `WebMvcConfigurer` 를 상속받아서 스프링빈에 등록후 기능을 확장한다.
+  * @Bean 이나 @Configuration 선언
+* 예로 인터셉터, ArgumentResolver 도 새로 구현한 후에는 이곳에 등록해서 확장해야한다.
+
 <br><br>
 
-# MVC 패턴(API) 경험적 체크리스트
+# 참고용 정보
 
+**redirect vs forward**
+
+* redirect 는 서버에서 응답을 통해 클라까지 응답이 나갔다가 클라가 redirect 경로를 보고 다시 해당 경로로 서버에 요청하는 형태
+* forward 는 서버 내부에서 일어나는 호출이므로 클라가 전혀 인지하지 못함
+
+**PRG Post/Redirect/Get** 
+
+* **웹 브라우저의 새로고침은 마지막 서버에 전송한 데이터를 다시 전송한다.**  
+
+* **따라서 POST 적용후 새로고침을 하면 계속 POST 보내는 문제가 발생하므로 이를 Redirect를 통해서 GET으로 요청하는 방식으로 해결할 수 있다.**
+
+* **RedirectAttributes 추천**
+  * Redirect 할때 Model처럼 파라미터를 추가해서 간편히 넘겨줄 수 있고, URL 인코딩 문제에서 자유롭다!
+    * `"redirect:/basic/items/" + item.getId()` 는 인코딩 문제가 발생할 수 있는데,
+    * `"redirect:/basic/items/{itemId}"` 는 인코딩 문제에서 자유롭다.
+
+  * **특히 Status 정보를 파라미터로 넘김으로써 `th:if` 문법으로 "저장완료" 표시도 나타내는데 많이 사용한다.**
+
+
+**jar vs war**
+
+* **jar은 내부 톰캣 사용, war은 외부 서버 사용**으로 이해하면 됨
+* 외부 톰캣에서 webapp 경로를 사용하는 편인데, 실제로 war은 사용가능하나 jar은 사용불가
+
+**Content-Type 헤더 기반 Media Type 과 Accept 헤더 기반 Media Type**
+
+* text/html, application/json 같은 content-type 을 의미
+* **요청때나 응답할때나 body를 사용할때는 필수로 존재 및 서로 맞게 요청해야 함**
+
+<br>
+
+**타임리프 문법**
+
+* 핵심 : 서버로 실행(뷰 템플릿 사용)하면 타임리프 문법들이 적용해서 동적으로 변경!
+  * 스프링 부트는 "뷰 리졸버" 를 자동 등록하는데, 이때 설정파일에 등록한  `spring.mvc.view.prefix , spring.mvc.view.suffix` 정보를 사용해서 등록한다.
+  * "뷰 리졸버" 에 필요한 "경로" 를 설정하는 부분인데 요즘 Thymeleaf 는 이것도 자동으로 등록해줘서 설정할 필요가 없다.
+    * 혹시나 JSP 사용할 경우에는 이부분 기억해두자.
+* 타임리프 사용 선언
+  * `<html xmlns:th="http://www.thymeleaf.org">`
+  * **참고로 `param` 으로 바로 파라미터값 불러올 수 있게 제공도 해주는 중**
+* 속성 변경
+
+  * `th:href="@{/css/bootstrap.min.css}"`
+  * `th:onclick="|location.href='@{/basic/items/add}'|"`
+  * `<td th:text="${item.price}">10000</td>`
+  * `th:value="${item.id}"`
+  * `th:action`
+  * ... 등등 매우 다양
+* URL 링크표현식 - @{...}
+
+  * `th:href="@{/css/bootstrap.min.css}"`
+
+  * `th:href="@{/basic/items/{itemId}(itemId=${item.id})}"`
+  * 심화) `th:href="@{/basic/items/{itemId}(itemId=${item.id}, query='test')}" `
+    * 생성된 링크: `http://localhost:8080/basic/items/1?query=test`
+  * 간편) `th:href="@{|/basic/items/${item.id}|}"`
+    * 리터럴 대체문법 적용가능
+* 리터럴 대체 - |...|
+
+  * 타임리프에서 문자와 표현식 등은 분리되어 있기 때문에 더해서 사용해야 한다.
+    * `<span th:text="'Welcome to our application, ' + ${user.name} + '!'">`
+  * 다음과같이 리터럴 대체문법을사 용하면, 더하기 없이 편리하게 사용할 수 있다.
+    * `<span th:text="|Welcome to our application, ${user.name}!|">`
+    * `th:onclick="|location.href='@{/basic/items/{itemId}/edit(itemId=${item.id})}'|"`
+* 변수표현식 - ${...}
+
+  * `<td th:text="${item.price}">10000</td>`
+* 반복출력 - th:each
+
+  * `<tr th:each="item : ${items}">`
+  * 컬렉션의 수만큼 `<tr>..</tr>` 이 하위 테그를 포함해서 생성된다.
+* 조건문 - th:if
+
+  * `<h2 th:if="${param.status}" th:text="'저장 완료'"></h2>`
