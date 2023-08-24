@@ -499,7 +499,7 @@
       }
       ```
 
-  * @RequestBody, @ResponseBody : HttpEntity 처럼 HTTP 메시지 **컨버터**가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 자동 변환!!
+  * @RequestBody, @ResponseBody : HttpEntity 처럼 **HTTP 메시지 컨버터**가 **HTTP 메시지 바디**의 내용을 우리가 원하는 문자나 **객체 등으로 자동 변환**!!
 
     * 요청파라미터 @RequestParam, @ModelAttribute 랑은 전혀 관계없으니까 혼동 X
 
@@ -522,7 +522,9 @@
       * 반환 타입을 String이 아닌 HelloData로 하면 @ResponseBody 로 인해 return할때 응답body에 문자로 넣어준다 했는데 덕분에 json로 집어넣어준다.
       * 즉, json(요청)->객체->json(응답) 로 동작한다.
 
-    * 만약 @ResponseBody 가 없으면 뷰 리졸버가 실행 되어서 뷰를 찾아서 렌더링!!
+    * **(핵심!) 만약 @ResponseBody 가 없으면 뷰 리졸버가 실행 되어서 뷰를 찾아서 렌더링!!**
+
+      * **참고로 @RestController 는 @ResponseBody 가지고있음!!**
 
   * 뷰 반환, 데이터 반환 정리
 
@@ -602,6 +604,58 @@
 * 스프링은 `WebMvcConfigurer` 를 상속받아서 스프링빈에 등록후 기능을 확장한다.
   * @Bean 이나 @Configuration 선언
 * 예로 인터셉터, ArgumentResolver 도 새로 구현한 후에는 이곳에 등록해서 확장해야한다.
+
+<br>
+
+**(중요)"메시지, 국제화 기능"**
+
+* `application.properties` 에 `spring.messages.basename=message` 를 추가!!
+  * 이후 `messages.properties` 에 공통 관리할 messages에 담을 내용을 세팅
+* 여러개 추가할거면?? 
+  * 예로 `errors.properties` 추가한다고 하면 `spring.messages.basename=message, errors` 이렇게 이어적으면 됨
+
+<br>
+
+**검증 - Validation (의존성 추가 필수)**
+
+* **검증이란** Form 데이터같은 것들이 POST 요청왔을때 원하는 "검증"을 진행하는 것  
+  (ex: 0~9999 숫자범위"를 지정)
+
+  * HTTP 요청 "Form데이터, URL파라미터" 는 "검증" 만으로 충분 - @ModelAttribute
+  * HTTP 요청 "API" 는 "검증 + 예외처리" 까지 필요 - @RequestBody
+    * 그럼 예외는?? String 타입에 int가 넘어왔다던지 이런쪽의 에러를 처리하는걸 "예외처리"
+    * 또한, **API의 경우에는 여기서 사용한 메커니즘들을 활용하되 메시지는 꼭 API스펙에 맞춰 잘 반환**해주면 됨 (참고로 타임리프는 그냥 th문법으로 알아서 잘 가져옴)
+
+* **"@Validated + {HTTP요청 + BindingResult} + 검증 애노테이션 + errors.properties" 사용**
+
+  * @Valid, @Validated 둘다 사용가능하나 @Validated가 추가한 라이브러리 사용 지원
+
+  * {HTTP요청(@ModelAttribute or @RequestBody) + BindingResult} 는 꼭 이순서대로 파라미터에 작성
+
+  * **[검증 애노테이션 모음](https://docs.jboss.org/hibernate/validator/6.2/reference/en-US/ 
+    html_single/#validator-defineconstraints-spec)** => DTO로 만든 도메인에 원하는 "검증" 작성!
+
+  * BeanValidation의 메시지 찾는순서는 `errors.properties` 를 먼저 찾고 `검증 애노테이션의 message 속성` 사용
+
+    ```properties
+    NotBlank.item.itemName=상품 이름을 적어주세요.
+    NotBlank={0} 공백X
+    Range={0}, {2} ~ {1} 허용
+    Max={0}, 최대 {1}
+    ```
+
+    * NotBlanck 보다 NotBlank.item.itemName 같이 세부 필드를 더 우선순위 높게 출력
+    * FieldError, ObjectError 의 개념이 존재
+      * FieldError 는 "검증 애노테이션" 사용
+      * ObjectError 는 "직접 작성 - reject() 함수 권장"
+
+* **타임리프**
+
+  * th:field, th:errors, th:errorclass 를 주로 같이 활용
+
+<br>
+
+예외처리 ??...
 
 <br><br>
 
@@ -721,3 +775,14 @@
 
 * **th:object, th:field, *{itemName} 활용**
 * **체크박스, 라디오버튼, 셀렉트 박스에서 활용**
+* **(중요)"메시지, 국제화 기능"**
+  * `application.properties` 에 `spring.messages.basename=message` 를 추가!!
+* 여러개 추가할거면?? 예로 errors.properties 추가한다고 하면 message, errors 이렇게 이어적으면 됨
+  * 이후 `messages.properties` 를 추가해서 messages에 담을 내용을 세팅
+* 타임리프로 사용 예시 : `<h2 th:text="#{page.addItem}">상품 등록</h2>` `
+* **(참고) nullsafe**
+  * `th:if="${errors?.containsKey('globalError')}"` 에서 ?를 통해 null 로 나타나므로 if는 false로 반환
+  * ?가 없으면 null.containesKey... 로 에러
+* "컨트롤러"에서 그냥 @GET 으로 페이지 로딩할때 item을 빈값이라도 선언해둬서 Model에 담아 반환하는걸 권장
+  * **검증 실패 때 forward로 "자원 재활용"이 됨.**
+  * HTML 코드도 더 깔끔 -  if문으로 null인지 확인할 필요없이 그냥 item을 타임리프 문법으로 사용하면 되기때문
