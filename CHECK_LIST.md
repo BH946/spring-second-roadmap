@@ -532,6 +532,8 @@
     * @Controller + @ResponseBody - Data 반환
     * @RestController - Data 반환
 
+  * 쿠키 편리하게 조회 @CookieValue
+
 * **TDD**
 
   * @Test : 기본 테스트이고 @SpringBootTest는 스프링 통합 테스트
@@ -541,7 +543,6 @@
     * then에 결과를 보는것. 멤버이름이 잘 생겼는지 등등..(assert보통 씀!)
   * @RunWith(SpringRunner.class) : 스프링과 테스트 통합
   * @SpringBootTest :  스프링 컨테이너와 테스트를 함께 실행 (이게 없으면 @Autowired 다 실패)
-
   * @Transactional : 반복가능한 테스트지원, 각각의 테스트를 실행할 때 마다 트랜잭션을 시작하고 테스트가 끝나면 트랜잭션을 강제로 롤백 (이 어노테이션은 테스트 케이스에서 사용될때만 기본값으로 롤백)
     * 롤백을 하기때문에 내부에서 굳이 영속성 컨텍스트 플러시를 안하는 특징을 가짐
     * @Rollback(false) : 롤백 취소
@@ -560,6 +561,8 @@
     * 또는 try, catch대신 `@Test(expected = IllegalStateException.class)` 를 선언하면 알아서 해당 예외 터질 때 종료해줌
       * 만약 해당 예외가 안터지면 그다음 코드들이 계속 실행됨. 그 코드는 아래 형태로 작성
       * `Assertions.fail("예외가 발생해야 한다.");` 예외가 안터져서 오히려 에러라고 로그를 남겨줌
+  * **HttpServletRequest, HttpServletResponse 관련 테스트**
+    * 이를 흉내내주는 `MockHttpServletRequest, MockHttpServletResponse` 을 사용!
 
 * **ETC**
 
@@ -574,7 +577,6 @@
   * **@AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언**
     * **참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것**
 
-
 <br>
 
 **리팩토링**
@@ -585,8 +587,19 @@
     * 사용할때 : @Around로 원하는 곳에 적용
     * 동작 : 프록시 객체 생성 -> 실제 객체 생성 의 흐름
   * **웹의 경우**
-    * **스프링 인터셉터** 사용 권장 및 **ArgumentResolver** 활용 권장
+    * **서블릿 필터 보다는 스프링 인터셉터** 사용 권장 및 **ArgumentResolver** 활용 권장
       * **ArgumentResolver** 를 통해서 공통 작업할 때 컨트롤러를 더욱 편리하게 사용 가능
+        * `HTTP 요청 -> WAS -> 필터 -> 서블릿 -> 인터셉터1 -> 인터셉터2 -> 컨트롤러`
+          * 서블릿(=Dispatcher Servlet) 과 컨트롤러(핸들러) 사이에는 사실 핸들러 어댑터가 동작을 하며, 
+          * 이때 "**ArgumentResolver**" 가 중간에 있어서 이를 거치고 "컨트롤러(핸들러)" 가 동작
+          * **ArgumentResolver 덕분에 수많은 애노테이션으로 만든 데이터들을 컨트롤러(핸들러)로 정상 전달**
+        * EX) @Login 애노테이션 만들어서 "멤버 정보" 객체 반환 이런게 가능!
+        * 기존 : `@SessionAttribute(name = "loginMember", required = false) Member loginMember` 
+        * **적용 : `@Login Member loginMember`** 
+    * **"인터셉터" 는 "필터" 보다 더 많이 호출** 
+      * **"로그인 인증" 을 예시로 구현 가능**
+        * `preHandle` 에 "세션정보(쿠키)" 인증을 시도 및 실패시 다시 "로그인창" 으로 이동
+        * 이를 다양한 **URL 패턴으로 적용 가능** - 적용URL, 미적용URL 구분도 간편
 * **예외처리 - Spring Exception**
   * **html**
     * 자동으로 에러에 필요한 로직을 등록하므로 바로 활용가능
@@ -646,8 +659,16 @@
 
     * NotBlanck 보다 NotBlank.item.itemName 같이 세부 필드를 더 우선순위 높게 출력
     * FieldError, ObjectError 의 개념이 존재
-      * FieldError 는 "검증 애노테이션" 사용
-      * ObjectError 는 "직접 작성 - reject() 함수 권장"
+      * FieldError 는 도메인에 "검증 애노테이션" 사용 + "bindingResult.hasErrors()" 필수
+      * ObjectError 는 "직접 작성 - bindingResult.reject() 함수 권장"
+        * `bindingResult.hasErrors()` 는 errors가 있는지 여부를 반환하고, 
+        * `errors` 에는 "검증결과 에러" 들을 기록하며 이는 "검증 애노테이션"에 걸린 에러들을 의미
+
+* **참고) id에는 적용하는가??? 언제써야 하는가???**
+
+  *  id에 왜 검증을 넣냐고 볼 수도 있지만, POSTMAN같은 툴로 충분히 악의적 접근이 가능하기 때문에 "최종 검증은 서버에서 진행하는 것이 안전"
+    * 예로 "등록 폼" 에서는 보통 id가 자동생성하므로 필요없기 때문에 @NotNull 같은걸 적용안해도 됨. 그러나 "수정 폼" 에서는 id가 필요하기에 "검증"을 해주는것이 안전
+    * **즉, 필요한 경우가 있을때는 "서버에서 최종 검증" 을 하는것이 안전!**
 
 * **타임리프**
 
@@ -655,7 +676,11 @@
 
 <br>
 
-예외처리 ??...
+**예외처리 - @ExceptionHandle** 
+
+* **웹 에러 처리의 경우에는 기존 "스프링 부트 기본제공" (BasicErrorController) 을 규칙에 맞게끔 사용하자**
+* **API 에러 처리의 경우에는 @ExceptionHandler 와 @ControllerAdvice 를 조합해서 사용하자**
+  * @ControllerAdvice 는 에러처리 로직을 분류하는 역할!
 
 <br><br>
 
@@ -786,3 +811,76 @@
 * "컨트롤러"에서 그냥 @GET 으로 페이지 로딩할때 item을 빈값이라도 선언해둬서 Model에 담아 반환하는걸 권장
   * **검증 실패 때 forward로 "자원 재활용"이 됨.**
   * HTML 코드도 더 깔끔 -  if문으로 null인지 확인할 필요없이 그냥 item을 타임리프 문법으로 사용하면 되기때문
+
+<br>
+
+**로그인 구현 방식**
+
+* 컨트롤러 - ArgumentResolver 활용해서 @Login으로 바로 Member 객체 가져오기
+
+  ```java
+  @GetMapping("/")
+  public String homeLoginV3ArgumentResolver(@Login Member loginMember, Model model) {
+      //세션에 회원 데이터가 없으면 home
+      if (loginMember == null) {
+          return "home";
+      }
+      //세션이 유지되면 로그인으로 이동
+      model.addAttribute("member", loginMember);
+      return "loginHome";
+  }
+  ```
+
+* 인터셉터 - URL 접근시 전부 회원인증 여부 체크(공통관리)를 인터셉터로 확인
+
+  ```java
+  @Slf4j
+  public class LoginCheckInterceptor implements HandlerInterceptor {
+  
+      @Override
+      public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+  
+          String requestURI = request.getRequestURI();
+  
+          log.info("인증 체크 인터셉터 실행 {}", requestURI);
+  
+          HttpSession session = request.getSession(); // false가 나을듯?
+  
+          if (session == null || session.getAttribute(SessionConst.LOGIN_MEMBER) == null) {
+              log.info("미인증 사용자 요청");
+              //로그인으로 redirect
+              response.sendRedirect("/login?redirectURL=" + requestURI);
+              return false;
+          }
+  
+          return true;
+      }
+  }
+  ```
+
+* WebMvcOnfigurer 적용 - 인터셉터와 ArgumentResolver 를 설정해야 적용이 됨
+
+  ```java
+  @Configuration
+  public class WebConfig implements WebMvcConfigurer {
+  
+      @Override
+      public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+          resolvers.add(new LoginMemberArgumentResolver());
+      }
+  
+      @Override
+      public void addInterceptors(InterceptorRegistry registry) {
+          registry.addInterceptor(new LoginCheckInterceptor())
+                  .order(2)
+                  .addPathPatterns("/**") // 인증O
+                  .excludePathPatterns("/", "/members/add", "/login", "/logout",
+                          "/css/**", "/*.ico", "/error"); // 인증X
+      }
+  }
+  ```
+
+* 타임아웃은 글로벌 설정으로 이미 1800(30분)으로 적용되어 있는것같아서 수정할 필요 없어보임.
+  그래도 설정이 눈에 보이게끔 server.servlet.session.timeout=1800 // 분단위. 이렇게 놔둬.
+
+* 쿠키 id는 SessionConst.java 만들어서 상수로 등록 권장. 자주쓰니까
