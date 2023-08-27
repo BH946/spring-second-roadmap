@@ -576,6 +576,7 @@
     * `implementation 'org.springframework.boot:spring-boot-starter-validation'`
   * **@AllArgsConstructor : 생성자 대신 만들어줘서 필드만 선언**
     * **참고로 생성자 주입 방식인 `@RequiredArgsConstructor` 와 햇갈리지 말것**
+  * @Value : application.properties에 선언한 변수 사용
 
 <br>
 
@@ -884,3 +885,52 @@
   그래도 설정이 눈에 보이게끔 server.servlet.session.timeout=1800 // 분단위. 이렇게 놔둬.
 
 * 쿠키 id는 SessionConst.java 만들어서 상수로 등록 권장. 자주쓰니까
+
+<br>
+
+**타입 컨버터 (참고)**
+
+* 웹 - `@Requestparam, @ModelAttribute, @PathVariable` 스프링이 기본 지원
+
+  * "타임리프" 도 지원 - `th:field, ${{...}}`
+
+* 단, **HTTP API (@ResponseBody 등)**의 경우 지원하지 않는다(**HttpMessageConverter 는 "컨버전 서비스 적용 불가"**)
+  * **이 경우에는 Jackson 같은 라이브러리에서 포맷터를 찾아 사용**
+
+* 물론 "확장 가능" 하고, 아래는 애노테이션 제공
+
+  ```java
+  @Data
+  static class Form {
+      @NumberFormat(pattern = "###,###")
+      private Integer number;
+  
+      @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+      private LocalDateTime localDateTime;
+  }
+  ```
+
+
+<br>
+
+**"파일 업로드, 다운로드" 기본 지식**
+
+* **파일은 "스토리지"** 저장, 경로와 이름 등 정보**(EX: Item)는 "DB"** 저장
+* **Item** - uploadFileName, storeFileName 는 필수 저장
+  * uploadFileName(업로드 파일명), storeFileName(서버에 저장된 파일명) 둘 다 DB에 기록해놔야 함
+  * 업로드 파일명들은 사람마다 중복될 수 있으며, 서버 파일명은 중복되면 안돼서 UUID 같은걸로 지정하기에 "둘 다 기록"
+* **ItemForm** - Item의 Dto 용으로 만들어서 Form 데이터를 받는 도메인을 만들어줘야 함
+  * 여기선 `MultipartFile` 타입을 사용해 데이터 받을거라 Item 에선 할 수 없기에 만들어줌
+* **FileStore.java**
+  * "스토리지" 에 저장하는 로직을 작성해서 "컨트롤러" 에서 사용
+* **컨트롤러에서..**
+  * `@GetMapping("/images/{filename}")` : \<img> 태그로 **이미지를 조회**할 때 사용
+    * UrlResource 로 이미지 파일을 읽어서 @ResponseBody 로 이미지 바이너리를 반환
+    * 경로에 "file:" 을 넣어야 내부저장소 경로를 접근하는 것 (스토리지에 파일 있으니까!)
+      * 이 부분을 통해 **"경로 설정" 을 꼭 해줘야 정상 접근**
+  * `@GetMapping("/attach/{itemId}")` : **파일을 다운로드** 할때 실행
+    * "/attach/{itemId}" - \<a> 태그 "href" 활용해 "파일명" 을 눌러서 접근하게 한 URL 경로
+      * 파일 다운로드시 권한 체크같은 복잡한 상황까지 가정해서 이미지 id 를 요청하도록 함
+    * 파일 다운이 되려면 반환할때 **"헤더" 가 필수**
+    * 파일 다운로드시에는 고객이 업로드한 파일 이름으로 다운로드 하는게 좋다. 
+      * Content-Disposition 해더에 `attachment; filename="업로드 파일명"`
