@@ -269,6 +269,70 @@
 
 <br>
 
+**JPQL 추가정보**
+
+* **반환**
+
+  * TypeQuery: 반환 타입이 명확할 때 사용
+  * Query: 반환 타입이 명확하지 않을 때 사용
+  * **Dto -> QueryDSL 사용시 패키지 명까지 없앨 수 있음 (우선 이걸로 자주 사용하자)**
+    * `List<MemberDTO> result = em.createQuery("select new jpql.MemberDTO(m.username, m.age) from Member m", MemberDTO.class)`
+  * **query.getResultList(): 결과가 하나 이상일 때, 리스트 반환**
+  * query.getSingleResult(): 결과가 정확히 하나, 단일 객체 반환
+
+* **쿼리문도 조건식 존재(case...then...else...end)**
+
+  * `select case when m.age <= 10 then '학생요금' when m.age >= 60 then '경로요금'  else '일반요금' end from Member m`
+
+* **페치징 API**
+
+  * setFirstResult(int startPosition) : 조회 시작 위치 (0부터 시작)
+  * setMaxResults(int maxResult) : 조회할 데이터 수
+
+* **fetch join : 객체 그래프 유지할 때 사용시 효과적**
+
+  * **여러 테이블을 조인해서 엔티티가 가진 모양이 아닌 전혀 다른 결과를 내야 하면, 페치 조인 보다는 일반 조인을 사용하고 필요한 데이터들만 조회해서 DTO로 반환하는 것이 효과적**
+  * **T.\*, M.* 로 두 테이블 모두 조회 ("즉시 로딩")**
+    * **`XToOne` 문제없음, `XToMany` 는 Distinct 함께 사용**
+  * **페이징 API - `XToOne`는 바로 페치조인O, `XToMany`는 일반 select + BatchSize (페치조인X)**
+    * **글로벌로 100정도 깔아두고 개발하자**
+  * 페치 조인 대상에는 별칭X - 유일하게 연속으로 join 가져오는 경우에만 사용
+  * 둘 이상의 컬렉션은 페치 조인X
+
+* **경로 표현식 3가지 - 상태, 연관 필드(단일, 컬렉션)**
+
+  * **일반 join 사용시 "묵시적 내부 조인" 이 아닌 "명시적 조인" 을 사용할 것**
+
+    ```java
+    select m.username -> 상태 필드 
+      from Member m 
+        join m.team t    -> 단일 값 연관 필드 
+        join m.orders o -> 컬렉션 값 연관 필드 
+    where t.name = '팀A'
+    ```
+
+* **엔티티 직접 사용**
+
+  * **JPQL에서 엔티티를 직접 사용하면 SQL에서 해당 엔티티의 "기본 키" 값을 사용**
+  * (JPQL) : select count**(m)** from Member m    
+  * (SQL) : select count**(m.id)** as cnt from Member m
+
+* **Named 쿼리**
+
+  * **(참고) 실무에서는 Spring Data JPA 를 사용하는데 @Query("select...") 문법이 바로 "Named 쿼리"**
+    * 지금은 쓰지말고, Spring Data JPA 를 공부하고 나면 ㄱㄱ
+
+* **벌크 연산 - 여러 데이터 한번에 "수정, 삭제" 연산**
+
+  * JPA 는 보통 실시간 연산에 치우쳐저 있는데, 대표적인 예가 "더티 체킹"
+    * 100개 데이터가 변경되었으면 100개의 Update 쿼리가 나가게 되는 문제
+    * **이런건 "벌크 연산" 으로 해결하자**
+  * **올바른 사용법**
+    * **벌크 연산을 먼저 실행**
+    * **벌크 연산 수행 후 영속성 컨텍스트 초기화**
+
+<br>
+
 **추가정보**
 
 * 무조건 **지연로딩**을 사용하라고 했는데, **즉시로딩을 사용하고 싶을땐??**
