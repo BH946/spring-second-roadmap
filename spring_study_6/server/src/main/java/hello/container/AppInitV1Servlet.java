@@ -6,6 +6,7 @@ import jakarta.servlet.ServletRegistration;
 
 /**
  * http://localhost:8080/hello-servlet
+ * AppInit 구현체이기 때문에 자동으로 MyContainerInitV2 에 등록
  *
  * servletContext.addServlet() 서블릿 등록
  */
