@@ -1,0 +1,61 @@
+30-Aug-2023 17:46:49.017 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.13
+30-Aug-2023 17:46:49.025 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Aug 23 2023 21:34:59 UTC
+30-Aug-2023 17:46:49.026 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.13.0
+30-Aug-2023 17:46:49.027 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 10
+30-Aug-2023 17:46:49.027 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+30-Aug-2023 17:46:49.028 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+30-Aug-2023 17:46:49.028 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Java\openjdk-11.0.14.1_1
+30-Aug-2023 17:46:49.028 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          11.0.14.1+1
+30-Aug-2023 17:46:49.028 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Oracle Corporation
+30-Aug-2023 17:46:49.029 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13
+30-Aug-2023 17:46:49.029 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13
+30-Aug-2023 17:46:49.040 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\conf\logging.properties
+30-Aug-2023 17:46:49.046 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+30-Aug-2023 17:46:49.047 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+30-Aug-2023 17:46:49.048 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+30-Aug-2023 17:46:49.049 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+30-Aug-2023 17:46:49.049 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+30-Aug-2023 17:46:49.050 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+30-Aug-2023 17:46:49.051 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+30-Aug-2023 17:46:49.052 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+30-Aug-2023 17:46:49.052 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13
+30-Aug-2023 17:46:49.053 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13
+30-Aug-2023 17:46:49.054 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\temp
+30-Aug-2023 17:46:49.077 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Java\openjdk-11.0.14.1_1\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Users\KoBongHun\anaconda3\condabin;C:\Python310\Scripts\;C:\Python310\;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\Program Files\Geth;C:\Program Files\Java\openjdk-11.0.14.1_1\bin;C:\Program Files\Java\scripts;C:\Program Files\dotnet\;C:\Ruby31-x64\bin;C:\Users\KoBongHun\anaconda3;C:\Users\KoBongHun\anaconda3\Library\mingw-w64\bin;C:\Users\KoBongHun\anaconda3\Library\usr\bin;C:\Users\KoBongHun\anaconda3\Library\bin;C:\Users\KoBongHun\anaconda3\Scripts;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Python39\Scripts\;C:\Python39\;C:\Users\KoBongHun\AppData\Local\Microsoft\WindowsApps;C:\Users\KoBongHun\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\KoBongHun\AppData\Local\GitHubDesktop\bin;C:\Users\KoBongHun\AppData\Roaming\npm;C:\Users\KoBongHun\AppData\Local\Android\Sdk\platform-tools;C:\Users\KoBongHun\AppData\Local\atom\bin;C:\Users\KoBongHun\besu\build\install\besu\bin;C:\flutter\bin;;C:\Users\KoBongHun\AppData\Local\afreeca;C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2022.3.1\bin;;C:\Program Files (x86)\ESTsoft\ALSee\x64;.]
+30-Aug-2023 17:46:49.294 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+30-Aug-2023 17:46:49.323 정보 [main] org.apache.catalina.startup.Catalina.load [538] 밀리초 내에 서버가 초기화되었습니다.
+30-Aug-2023 17:46:49.380 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+30-Aug-2023 17:46:49.384 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.13]
+30-Aug-2023 17:46:49.399 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\docs]을(를) 배치합니다.
+30-Aug-2023 17:46:49.859 경고 [main] org.apache.catalina.util.SessionIdGeneratorBase.createSecureRandom [SHA1PRNG] 알고리즘을 사용하여, 세션 ID를 생성하기 위한 SecureRandom 객체를 생성하는데, [146] 밀리초가 소요됐습니다.
+30-Aug-2023 17:46:49.898 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\docs]에 대한 배치가 [500] 밀리초에 완료되었습니다.
+30-Aug-2023 17:46:49.902 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\examples]을(를) 배치합니다.
+30-Aug-2023 17:46:50.293 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\examples]에 대한 배치가 [391] 밀리초에 완료되었습니다.
+30-Aug-2023 17:46:50.297 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\host-manager]을(를) 배치합니다.
+30-Aug-2023 17:46:50.333 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\host-manager]에 대한 배치가 [35] 밀리초에 완료되었습니다.
+30-Aug-2023 17:46:50.336 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\manager]을(를) 배치합니다.
+30-Aug-2023 17:46:50.365 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\manager]에 대한 배치가 [28] 밀리초에 완료되었습니다.
+30-Aug-2023 17:46:50.366 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\ROOT]을(를) 배치합니다.
+30-Aug-2023 17:46:50.391 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [C:\Users\KoBongHun\Desktop\Git\Study\Spring-Study\spring-second-roadmap\spring_study_6\apache-tomcat-10.1.13\webapps\ROOT]에 대한 배치가 [25] 밀리초에 완료되었습니다.
+30-Aug-2023 17:46:50.397 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
+30-Aug-2023 17:46:50.567 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [1241] 밀리초 내에 시작되었습니다.
+30-Aug-2023 17:47:12.330 심각 [main] org.apache.catalina.startup.Catalina.stopServer [localhost:8005] (base 포트 [8005] 그리고 offset [0])와(과) 연결할 수 없었습니다. Tomcat이 실행 중이지 않을 수 있습니다.
+30-Aug-2023 17:47:12.341 심각 [main] org.apache.catalina.startup.Catalina.stopServer Catalina를 중지시키는 중 오류 발생
+	java.net.ConnectException: Connection refused: connect
+		at java.base/java.net.PlainSocketImpl.connect0(Native Method)
+		at java.base/java.net.PlainSocketImpl.socketConnect(PlainSocketImpl.java:101)
+		at java.base/java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:412)
+		at java.base/java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:255)
+		at java.base/java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:237)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+		at java.base/java.net.Socket.connect(Socket.java:609)
+		at java.base/java.net.Socket.connect(Socket.java:558)
+		at java.base/java.net.Socket.<init>(Socket.java:454)
+		at java.base/java.net.Socket.<init>(Socket.java:231)
+		at org.apache.catalina.startup.Catalina.stopServer(Catalina.java:692)
+		at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+		at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+		at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+		at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+		at org.apache.catalina.startup.Bootstrap.stopServer(Bootstrap.java:393)
+		at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:483)
