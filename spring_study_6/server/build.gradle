@@ -19,3 +19,9 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+//explodedWar 명령어로 WAR 압축풀기 위함
+task explodedWar(type: Copy) {
+    into "$buildDir/exploded"
+    with war
+}
