@@ -20,4 +20,7 @@
 * **[실전! 스프링 부트와 JPA 활용2 - API 개발과 성능 최적화](./spring_study_2/jpashop)**
 * **[자바 ORM 표준 JPA 프로그래밍 - 기본편](./spring_study_3)**
 * [스프링 부트 - 핵심원리와 활용](./spring_study_6)
+  * **[스프링 부트 - server](./spring_study_6/server/)**
+  * 
+
 
