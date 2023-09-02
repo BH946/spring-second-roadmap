@@ -21,6 +21,5 @@
 * **[자바 ORM 표준 JPA 프로그래밍 - 기본편](./spring_study_3)**
 * [스프링 부트 - 핵심원리와 활용](./spring_study_6)
   * **[스프링 부트 - server](./spring_study_6/server/)**
-  * 
-
+  * **[스프링 부트 - autoconfig](./spring_study_6/memory/project-v2)**
 
