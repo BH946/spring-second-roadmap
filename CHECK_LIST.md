@@ -696,6 +696,11 @@
 
 **검증 - Validation (의존성 추가 필수)**
 
+* **예외?**
+  * 가장 좋은 예외는 **컴파일 예외**, 그리고 **애플리케이션 로딩 시점에 발생하는 예외**
+  * 가장 나쁜 예외는 고객 서비스중에 발생하는 **런타임 예외**
+  * 검증기 사용시 **앱 로딩 시점 예외**로 나타내 줄 수 있다는 장점!
+
 * **검증이란** Form 데이터같은 것들이 POST 요청왔을때 원하는 "검증"을 진행하는 것  
   (ex: 0~9999 숫자범위"를 지정)
 
@@ -747,9 +752,67 @@
 * **API 에러 처리의 경우에는 @ExceptionHandler 와 @ControllerAdvice 를 조합해서 사용하자**
   * @ControllerAdvice 는 에러처리 로직을 분류하는 역할!
 
+<br>
+
+**외부 설정 및 프로필**
+
+* `application.yml` 사용 추천 및 아래처럼 사용
+
+```yaml
+# default 프로필
+my:
+    datasource:
+        url: local.db.com 
+        username: local_user 
+        password: local_pw 
+        etc:
+            maxConnection: 2 
+            timeout: 60s
+            options: LOCAL, CACHE 
+---
+# prod 프로필
+spring:
+	config:
+		activate:
+			on-profile: prod 
+my:
+    datasource:
+        url: prod.db.com 
+        username: prod_user 
+        password: prod_pw 
+        etc:
+            maxConnection: 50 
+            timeout: 10s 
+            options: PROD, CACHE
+```
+
+* `@ConfigurationProperties` 를 통해 위 "외부 설정" 파일을 "자바 객체" 로 변경해서 "스프링 빈" 에 등록
+* "실행 시점" 에 원하는 프로필 사용!!
+  * IDE에서 Application 에 `--spring.profiles.active=prod` 하거나 (물론 값도 가능)
+  * Jar 실행 : `java -.... app.jar`
+
 <br><br>
 
 # 참고용 정보
+
+**스프링부트 플러그인 사용하면 "라이브러리 버전관리 자동화" - 물론 지원안하는건 직접 버전 등록**
+
+**web 라이브러리 없으면 바로 종료되는데, 이때 `ApplicationRunner` 구현체로 자바코 드실행하는게 보통**
+
+* ApplicationRunner 인터페이스를 사용하면 스프링은 빈 초기화가 모두 끝나고 애플리케이션 로딩이 완료되는 시점에 run(args) 메서드를 호출
+
+```java
+@Component
+@RequiredArgsConstructor
+public class OrderRunner implements ApplicationRunner { 
+    private final OrderService orderService;
+    
+    @Override
+    public void run(ApplicationArguments args) throws Exception { 
+        orderService.order(1000);
+    } 
+}
+```
 
 **redirect vs forward**
 

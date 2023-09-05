@@ -22,4 +22,5 @@
 * [스프링 부트 - 핵심원리와 활용](./spring_study_6)
   * **[스프링 부트 - server](./spring_study_6/server/)**
   * **[스프링 부트 - autoconfig](./spring_study_6/memory/project-v2)**
+  * **[스프링 부트 - external-read](./spring_study_6/external-read/)**
 
