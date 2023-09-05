@@ -538,7 +538,7 @@ public class MyDataSourcePropertiesV3 {
 **MyDataSourceConfigV3 - @EnableConfigurationProperties**
 
 * @EnableConfigurationProperties : MyDataSourcePropertiesV3 를 스프링 빈에 등록
-* @Import(MyDataSourceConfigV3.class) 를 통해 이 파일 자체를 스프링 빈에 등록
+* **"외부 설정" 파일을 "자바 객체(MyDataSource)" 로 변경해서 "스프링 빈" 에 등록**
 
 ```java
 @Slf4j
@@ -561,6 +561,10 @@ public class MyDataSourceConfigV3 {
     }
 }
 ```
+
+<br>
+
+**main 함수에서 @Import(MyDataSourceConfigV3.class) 를 통해 이 파일 자체를 스프링 빈에 등록**
 
 <br><br>
 
