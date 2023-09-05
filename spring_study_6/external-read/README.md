@@ -478,8 +478,13 @@ public class MyDataSourceValueConfig {
 * 생성자 주입방식 사용 가능 -> 즉, Setter 없이 가능
 * "검증기" 사용 가능 -> @Validate
   * `implementation 'org.springframework.boot:spring-boot-starter-validation'`
+  * 가장 좋은 예외는 **컴파일 예외**, 그리고 **애플리케이션 로딩 시점에 발생하는 예외**
+  * 가장 나쁜 예외는 고객 서비스중에 발생하는 **런타임 예외**
+  * 검증기 덕분에 **애플리케이션 로딩 시점에 발생하는 예외** 로 끝낼 수 있다.
 
 <br>
+
+**참고로 MyDataSource.java 는 앱 실행시 외부설정 내용 "로그" 찍는 파일입니다!**
 
 **MyDataSourcePropertiesV3 - @ConfigurationProperties**
 
