@@ -13,7 +13,7 @@
 이곳 README.md 파일에는 기억할 내용들만 간략히 정리하겠습니다.
 
 * **프로젝트**
-  * 액츄에이터 - actuator
+  * **액츄에이터 - actuator**
 
 <br><br>
 
@@ -98,7 +98,7 @@ tasks.named('test') {
 
 ## 1-1. 엔드포인트
 
-**라이브러리 추가하고 `http://localhost:8080/actuato` 접근해보면 바로 "앱 상태들을 제공"**
+**라이브러리 추가하고 `http://localhost:8080/actuator` 접근해보면 바로 "앱 상태들을 제공"**
 
 * `health` : 헬스 정보, `beans` : 스프링 컨테이너 등록된 빈, 등등...
   *  전체 엔드포인트는 다음공식 메뉴얼 참고 : [엔드포인트](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.endpoints)
@@ -117,7 +117,7 @@ tasks.named('test') {
 management:
 	endpoint:
 		shutdown:
-			enabled: true 
+			enabled: true
 	endpoints:
 		web:
 			exposure:
@@ -427,11 +427,473 @@ public class ActuatorApplication {
 
 # 3. 모니터링 메트릭 활용 - 비지니스 추가
 
+**테스트 비지니스로 컨트롤러 GET 형태로 order, cancel, stock 함수를 만들었다고 가정**
 
+**이후 마이크로미터를 사용해서 메트릭을 직접 등록하겠다.**
 
+* **마이크로미터 핵심 기능** : Counter, Gauge, Timer, Tags
 
+* **MeterRegistry** : 마이크로미터 기능을 제공하는 핵심 컴포넌트
+  * 스프링을 통해서 주입 받아서 사용
 
+* **참고** : 카운터와 게이지를 구분하는 것은 값이 감소하는가를 기준으로 나누면 된다.
 
+<br>
+
+**OrderController - 비지니스 로직 테스트 컨트롤러**
+
+```java
+@Slf4j
+@RestController
+public class OrderController {
+    private final OrderService orderService;
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService; 
+    }
+
+    @GetMapping("/order") 
+    public String order() {
+        log.info("order"); 
+        orderService.order();
+        return "order"; 
+    }
+    @GetMapping("/cancel") 
+    public String cancel() {
+        log.info("cancel"); 
+        orderService.cancel();
+        return "cancel"; 
+    }
+    @GetMapping("/stock") 
+    public int stock() {
+        log.info("stock");
+        return orderService.getStock().get(); 
+    }
+}
+```
+
+<br>
+
+**OrderSerivce - 인터페이스**
+
+```java
+public interface OrderService {
+    void order(); 
+    void cancel();
+    AtomicInteger getStock(); 
+}
+```
+
+<br><br>
+
+## 3-1. @Counted - V1, V2
+
+**OrderServiceV1**
+
+```java
+@Slf4j
+public class OrderServiceV1 implements OrderService {
+    private final MeterRegistry registry;
+    private AtomicInteger stock = new AtomicInteger(100); 
+    public OrderServiceV1(MeterRegistry registry) {
+        this.registry = registry; 
+    }
+    
+    @Override
+    public void order() {
+        log.info("주문");
+        stock.decrementAndGet();
+        Counter.builder("my.order")
+            .tag("class", this.getClass().getName()) 
+            .tag("method", "order")
+            .description("order")
+            .register(registry).increment();
+    }
+    @Override
+    public void cancel() {
+        log.info("취소");
+        stock.incrementAndGet();
+        Counter.builder("my.order")
+            .tag("class", this.getClass().getName()) 
+            .tag("method", "cancel")
+            .description("order")
+            .register(registry).increment();
+    }
+    @Override
+    public AtomicInteger getStock() {
+        return stock; 
+    }
+}
+```
+
+**OrderConfigV1**
+
+```java
+@Configuration
+public class OrderConfigV1 {
+    @Bean
+    OrderService orderService(MeterRegistry registry) {
+        return new OrderServiceV1(registry); 
+    }
+}
+```
+
+**ActuatorApplication - 수정**
+
+* 스프링이 빈에 자동 등록하는 MeterRegistry 을 사용
+
+```java
+//@Import(OrderConfigV0.class) 
+@Import(OrderConfigV1.class)
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**OrderServiceV2 - @Counted**
+
+```java
+@Slf4j
+public class OrderServiceV2 implements OrderService { 
+    private AtomicInteger stock = new AtomicInteger(100); 
+    
+    @Counted("my.order")
+    @Override
+    public void order() { 
+        log.info("주문"); 
+        stock.decrementAndGet();
+    }
+    @Counted("my.order") 
+    @Override
+    public void cancel() { 
+        log.info("취소"); 
+        stock.incrementAndGet();
+    }
+    @Override
+    public AtomicInteger getStock() {
+        return stock; 
+    }
+}
+```
+
+**OrderConfigV2**
+
+* **CountedAspect** 를 빈으로 반드시 등록해야 @Counted 관련 AOP 동작
+
+```java
+@Configuration
+public class OrderConfigV2 {
+    @Bean
+    public OrderService orderService() {
+        return new OrderServiceV2(); 
+    }
+    @Bean
+    public CountedAspect countedAspect(MeterRegistry registry) {
+        return new CountedAspect(registry); 
+    }
+}
+```
+
+**ActuatorApplication - 변경**
+
+```java
+//@Import(OrderConfigV1.class) 
+@Import(OrderConfigV2.class)
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**그라파나 대시보드에 등록!!**
+
+![image](https://github.com/BH946/spring-second-roadmap/assets/80165014/dee548c6-bf15-465f-8f77-07786e8c3e48) 
+
+<br><br>
+
+## 3-2. @Timed - V3, V4
+
+**OrderServiceV3**
+
+```java
+@Slf4j
+public class OrderServiceV3 implements OrderService {
+    private final MeterRegistry registry;
+    private AtomicInteger stock = new AtomicInteger(100); 
+    public OrderServiceV3(MeterRegistry registry) {
+        this.registry = registry; 
+    }
+    
+    @Override
+    public void order() {
+        Timer timer = Timer.builder("my.order")
+            .tag("class", this.getClass().getName()) 
+            .tag("method", "order")
+            .description("order") 
+            .register(registry);
+        timer.record(() -> { 
+            log.info("주문"); 
+            stock.decrementAndGet();
+            sleep(500); 
+        });
+    }
+    @Override
+    public void cancel() {
+        Timer timer = Timer.builder("my.order")
+            .tag("class", this.getClass().getName())
+            .tag("method", "cancel") 
+            .description("order") 
+            .register(registry);
+        timer.record(() -> { 
+            log.info("취소"); 
+            stock.incrementAndGet();
+            sleep(200); 
+        });
+    }
+    private static void sleep(int l) {
+        try {
+            Thread.sleep(l + new Random().nextInt(200));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e); 
+        }
+    }
+    @Override
+    public AtomicInteger getStock() {
+        return stock; 
+    }
+}
+```
+
+**OrderConfigV3**
+
+```java
+@Configuration
+public class OrderConfigV3 {
+    @Bean
+    OrderService orderService(MeterRegistry registry) {
+        return new OrderServiceV3(registry); 
+    }
+}
+```
+
+**ActuatorApplication - 변경**
+
+```java
+//@Import(OrderConfigV1.class) 
+//@Import(OrderConfigV2.class) 
+@Import(OrderConfigV3.class)
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**OrderServiceV4 - @Timed**
+
+```java
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger; 
+@Timed("my.order")
+@Slf4j
+public class OrderServiceV4 implements OrderService { 
+    private AtomicInteger stock = new AtomicInteger(100); 
+    
+    @Override
+    public void order() { 
+        log.info("주문"); 
+        stock.decrementAndGet();
+        sleep(500); 
+    }
+    @Override
+    public void cancel() { 
+        log.info("취소"); 
+        stock.incrementAndGet();
+        sleep(200); 
+    }
+    private static void sleep(int l) {
+        try {
+            Thread.sleep(l + new Random().nextInt(200));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e); 
+        }
+    }
+    @Override
+    public AtomicInteger getStock() {
+        return stock; 
+    }
+}
+```
+
+**OrderConfigV4**
+
+* **TimedAspect** 를 사용해야 @Timed 에 AOP 가 적용
+
+```java
+@Configuration
+public class OrderConfigV4 {
+    @Bean
+    OrderService orderService() {
+        return new OrderServiceV4(); 
+    }
+    @Bean
+    public TimedAspect timedAspect(MeterRegistry registry) {
+        return new TimedAspect(registry); 
+    }
+}
+```
+
+**ActuatorApplication - 변경**
+
+```java
+//@Import(OrderConfigV1.class) 
+//@Import(OrderConfigV2.class) 
+//@Import(OrderConfigV3.class) 
+@Import(OrderConfigV4.class)
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**그라파나 대시보드 등록!!**
+
+![image](https://github.com/BH946/spring-second-roadmap/assets/80165014/ce8ed7f6-1988-491b-bf8b-aa4991d0ce09) 
+
+<br><br>
+
+## 3-3. 게이지 - V1, V2
+
+**StockConfigV1**
+
+* 앞에서 빈에 OrderService 는 등록중이고, MeterRegistry 는 스프링이 자동으로 빈에 등록하므로 아래처럼 바로 파라미터로 사용 가능
+* my.stock 이라는이름으로 게이지를등록
+
+```java
+@Configuration
+public class StockConfigV1 {
+    @Bean
+    public MyStockMetric myStockMetric(OrderService orderService, MeterRegistry 
+                                       registry) {
+        return new MyStockMetric(orderService, registry); 
+    }
+
+    @Slf4j
+    static class MyStockMetric {
+        private OrderService orderService; 
+        private MeterRegistry registry;
+        public MyStockMetric(OrderService orderService, MeterRegistry registry) 		{
+            this.orderService = orderService; 
+            this.registry = registry;
+        }
+        
+        @PostConstruct 
+        public void init() {
+            Gauge.builder("my.stock", orderService, service -> { 
+                log.info("stock gauge call");
+                return service.getStock().get(); 
+            }).register(registry);
+        } 
+    }
+}
+```
+
+**ActuatorApplication - 변경**
+
+```java
+package hello;
+//@Import(OrderConfigV4.class)
+@Import({OrderConfigV4.class, StockConfigV1.class})
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**StockConfigV2 - MeterBinder(regitstry 관련 타입)**
+
+```java
+@Slf4j
+@Configuration
+public class StockConfigV2 {
+    @Bean
+    public MeterBinder stockSize(OrderService orderService) {
+        return registry -> Gauge.builder("my.stock", orderService, service -> {
+            log.info("stock gauge call");
+            return service.getStock().get(); 
+        }).register(registry);
+    } 
+}
+```
+
+**ActuatorApplication - 변경**
+
+```java
+//@Import({OrderConfigV4.class, StockConfigV1.class}) 
+@Import({OrderConfigV4.class, StockConfigV2.class})
+@SpringBootApplication(scanBasePackages = "hello.controller") 
+public class ActuatorApplication {}
+```
+
+<br>
+
+**그라파나 대시보드에 등록!!**
+
+![image](https://github.com/BH946/spring-second-roadmap/assets/80165014/3c7f1e2d-59b3-4de4-a8e9-10402daf54b1) 
+
+<br><br>
+
+## 3-4. 실무 모니터링 환경 구성 팁
+
+**모니터링 3단계** 
+
+* 대시보드
+* 애플리케이션 추적 - 핀포인트 
+* 로그
+
+<br>
+
+**대시보드**
+
+* 전체를 한눈에 볼 수 있는 가장 높은 뷰 
+
+* 제품 : 마이크로미터, 프로메테우스, 그라파나 등등 
+* 모니터링 대상
+  * 시스템 메트릭(CPU, 메모리)
+  * 애플리케이션 메트릭(톰캣 쓰레드 풀, DB 커넥션 풀, 애플리케이션 호출수) 
+  * 비즈니스 메트릭(주문수, 취소수)
+
+<br>
+
+**애플리케이션 추적**
+
+* 주로 각각의 HTTP 요청을 추적, 일부는 마이크로서비스 환경에서 분산 추적
+* 제품 : **핀포인트(오픈소스)**, 스카우트(오픈소스), 와탭(상용), 제니퍼(상용)
+
+<br>
+
+**로그**
+
+* 가장 자세한 추적, 원하는데로 커스텀 가능
+* 같은 HTTP 요청을 묶어서 확인할 수 있는 방법이 중요, MDC 적용 
+* 파일로직접 로그를 남기는경우
+  * 일반로그와 에러 로그는 파일을 구분해서 남기자 
+  * 에러로그만 확인해서 문제를 바로 정리할 수있음
+* 클라우드에 로그를 저장하는 경우 
+  * 검색이 잘 되도록 구분
+
+<br>
+
+**알람**
+
+* 모니터링 툴에서 일정이상 수치가 넘어가면, 슬랙, 문자등을 연동 
+* 알람은 2가지 종류로 꼭 구분해서 관리 : 경고, 심각
+* 경고는 하루 1번정도 사람이 직접 확인해도 되는 수준(사람이 들어가서확인) 
+* 심각은 즉시 확인해야 함, 슬랙알림(앱을 통해알림을 받도록), 문자, 전화
+* 예시
+  * 디스크사용량 70% 경고 
+  * 디스크사용량 80% 심각 
+  * CPU 사용량 40% 경고 
+  * CPU 사용량 50% 심각
 
 <br><br>
 
