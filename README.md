@@ -19,8 +19,9 @@
 * **[실전! 스프링 부트와 JPA 활용1 - 웹 애플리케이션 개발](./spring_study_1/jpashop)**
 * **[실전! 스프링 부트와 JPA 활용2 - API 개발과 성능 최적화](./spring_study_2/jpashop)**
 * **[자바 ORM 표준 JPA 프로그래밍 - 기본편](./spring_study_3)**
-* [스프링 부트 - 핵심원리와 활용](./spring_study_6)
+* **[스프링 부트 - 핵심원리와 활용](./spring_study_6)**
   * **[스프링 부트 - server](./spring_study_6/server/)**
   * **[스프링 부트 - autoconfig](./spring_study_6/memory/project-v2)**
   * **[스프링 부트 - external-read](./spring_study_6/external-read/)**
+  * **[스프링 부트 - actuator](./spring_study_6/actuator/)**
 
