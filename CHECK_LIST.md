@@ -6,6 +6,7 @@
 * 요구사항 분석부터 Spring 코드 구현 관련 내용까지
 * **단축키**
   * `Alt + Insert` : getter, setter, constructor 등 자동 생성
+  * `Ctrl + Alt + O` : 사용안하는 import 자동 정리(제거 등)
   * `Ctrl + Alt + V` : 변수 선언부를 자동 작성
   * `Ctrl + Alt + M` : 코드 리팩토링하기 쉽게끔 함수 자동 생성
   * `Ctrl+T->extra method` : 코드 리팩토링하기 쉽게끔 드래그한 코드를 하나의 함수로 자동 생성
@@ -348,6 +349,9 @@
 
   * 변경 감지 기능은 Flush 할때 발생
 
+    * **flush 자동 호출은 3가지 경우 - commit 시점, query 날리는 시점, 강제 em.flush()**
+    * 참고로 "트랜잭션" 사용시 "로직 종료때 커밋" 이라서 자동 호출!
+
   * 따라서 **영속성 컨텍스트를 사용하는 로직으로 작성해서 더티 체킹이 발생하도록 하자**
 
     ```java
@@ -537,7 +541,7 @@
       - 물론, 햇갈릴수도 있어서 그냥 **Model을 항상 데이터 보내는 용도로 사용**하고,
       - **@PathVariable을 url로 받은 값을 사용하는 목적**으로 활용하는게 젤 좋아보임.
 
-  * @ModelAttribute("from")
+  * @ModelAttribute("form")
 
     * model.addAttribute 에도 담기고, form서밋 때 html에 있는 form 데이터를 매핑해서 변수에도 자동으로 담아줘서 변수선언도 따로 할 필요 없음
 
@@ -632,6 +636,9 @@
 * **ETC**
 
   * @Slf4j : 로그를 바로 log로 사용 가능
+    * **Log Level : error > warn > info(기본값) > debug > trace**
+    * 보통 debug를 "개발서버용", info를 "운영서버용" 으로 사용
+    * 기본값이 info라서 debug로 개발서버 프로필에 따로 설정 해주자
   * @NotEmpty("에러 메세지 관련")
   * @Data -> 롬복
     * @Getter, @Setter, @ToString, @EqualsAndHashCode, @RequiredArgsConstructor 적용
@@ -712,12 +719,19 @@
 
 * **"@Validated + {HTTP요청 + BindingResult} + 검증 애노테이션 + errors.properties" 사용**
 
-  * @Valid, @Validated 둘다 사용가능하나 @Validated가 추가한 라이브러리 사용 지원
+  * **기존 엔티티인 Item 객체보단 DTO에 "검증" 사용하는 구조를 사용하겠다**
+
+    * **참고) DTO는 컨트롤러에서 파라미터 받을때 원본 엔티티 대신 사용(안전위해),** 
+    * **Model 에 담아서 html에 넘겨줄땐 당연히 DTO 아니여도 상관없음(안전하므로)**
+
+  * @Valid, @Validated 둘다 사용가능하나 **@Validated**가 추가한 라이브러리 사용 지원
 
   * {HTTP요청(@ModelAttribute or @RequestBody) + BindingResult} 는 꼭 이순서대로 파라미터에 작성
 
   * **[검증 애노테이션 모음](https://docs.jboss.org/hibernate/validator/6.2/reference/en-US/ 
     html_single/#validator-defineconstraints-spec)** => DTO로 만든 도메인에 원하는 "검증" 작성!
+
+  * @NotNull(message ="...") 이런식으로 메시지 바로 설정도 가능 / @Pattern(정규식)도 자주사용
 
   * BeanValidation의 메시지 찾는순서는 `errors.properties` 를 먼저 찾고 `검증 애노테이션의 message 속성` 사용
 
@@ -744,6 +758,10 @@
 * **타임리프**
 
   * th:field, th:errors, th:errorclass 를 주로 같이 활용
+    * `<div th:errors="*{id}"...` 등 이런형태로 바로 사용!! 에러시 해당 태그 출력!!
+    * @ModelAttribute("item") 매우중요!!
+      * 예로 th:object를 item 로 사용하면 반드시 Model에 "item"으로 담기게끔 해줘야함.
+      * 그런데 AddItemDto form 이런건 자동으로 Model에 "AddItemDto"로 담기기 때문에 위 방식을 사용!!
 
 <br>
 
@@ -813,7 +831,55 @@ my:
 
 <br><br>
 
-# 참고용 정보
+# 참고용 정보 - 필독!!
+
+**(1) Spring 2.xx + JUnit4(Test Code)**
+
+* `build.gradle	`
+
+```groovy
+//JUnit4 추가(junit5로 자동실행 되기 때문) - 의존성 추가
+testImplementation("org.junit.vintage:junit-vintage-engine") {
+    exclude group: "org.hamcrest", module: "hamcrest-core"
+}
+```
+
+* `TestCode.java`
+
+```java
+@RunWith(SpringRunner.class) // SpringRunner : Junit4
+@SpringBootTest // 스프링과 통합 테스트 - "빈" 등 스프링 사용시 필수
+public class ItemServiceTest { 
+    @Test // 기본 테스트(필수)
+    public void 조회() {} 
+}
+```
+
+**(2) Spring 3.xx + JUni5(Test Code)**
+
+* H2 사용시 반드시 버전 업그레이드 + 자바 17이상
+* RunWith, JUnit4 등록이 없어졌다고 보면 됨.
+* `build.gradle	`
+
+```groovy
+// JUnit5 자동 사용!
+// 테스트 코드에서 lombok 사용하는 꿀 팁! -> 아래 의존성 추가
+testCompileOnly 'org.projectlombok:lombok'
+testAnnotationProcessor 'org.projectlombok:lombok'
+```
+
+* `TestCode.java`
+* 참고 - 왜 @Transactional 이런건 바로 사용 가능한가?
+  * @Transactional 은 "빈에 반드시 TransactionManager 가 필요" 
+  * 스프링 부트는 자동으로 TransactionManager 등등 을 "빈에 등록" -> "자동 구성"
+
+```java
+@SpringBootTest // 스프링과 통합 테스트 - "빈" 등 스프링 사용시 필수
+public class ItemServiceTest { 
+    @Test // 기본 테스트(필수)
+    public void 조회() {} 
+}
+```
 
 **스프링부트 플러그인 사용하면 "라이브러리 버전관리 자동화" - 물론 지원안하는건 직접 버전 등록**
 
@@ -838,20 +904,25 @@ public class OrderRunner implements ApplicationRunner {
 
 * redirect 는 서버에서 응답을 통해 클라까지 응답이 나갔다가 클라가 redirect 경로를 보고 다시 해당 경로로 서버에 요청하는 형태
 * forward 는 서버 내부에서 일어나는 호출이므로 클라가 전혀 인지하지 못함
+  * 따라서 URL은 처음 호출한 URL 그대로이며(클라는 인지못해서), 동일 Web Container인 페이지로만 이동 가능!
+  * 단, request와 response는 공유
 
-**PRG Post/Redirect/Get** 
+**PRG Post/Redirect/Get - POST를 무한한 재요청 문제 해결 패턴** 
 
 * **웹 브라우저의 새로고침은 마지막 서버에 전송한 데이터를 다시 전송한다.**  
-
 * **따라서 POST 적용후 새로고침을 하면 계속 POST 보내는 문제가 발생하므로 이를 Redirect를 통해서 GET으로 요청하는 방식으로 해결할 수 있다.**
+  * Redirect를 사용해야지만 POST 보내는 URL을 벗어나기 때문!!
 
 * **RedirectAttributes 추천**
   * Redirect 할때 Model처럼 파라미터를 추가해서 간편히 넘겨줄 수 있고, URL 인코딩 문제에서 자유롭다!
     * `"redirect:/basic/items/" + item.getId()` 는 인코딩 문제가 발생할 수 있는데,
     * `"redirect:/basic/items/{itemId}"` 는 인코딩 문제에서 자유롭다.
-
   * **특히 Status 정보를 파라미터로 넘김으로써 `th:if` 문법으로 "저장완료" 표시도 나타내는데 많이 사용한다.**
-
+  * **따라서 Redirect 할때는 RedirectAttributes.addAttribute() 추천, html 반환 할때는 Model.addAttribute() 추천**
+    * 리다이렉트가 발생하면 원래 요청은 끊어지고, 새로운 HTTP GET 요청이 시작된다.(브라우저에게 이 URL로 리다이렉트해!) 때문에 리다이렉트 실행 이전에 수행된 모델 데이터는 소멸한다. 따라서 리다이렉트로 모델을 전달하는 것은 의미 없다.**[출처]** [[스프링\] RedirectAttributes](https://blog.naver.com/allkanet72/220964699929)|**작성자** [페얼프인](https://blog.naver.com/allkanet72)
+    * 즉, 리다이렉트시 새로운 HTTP GET 요청을 하므로 기존에 RedirectAttributes에 담아둔 데이터를 사용할 수 없음
+      * 단, `redirectAttributes.addAttribute` 는 파라미터로 전송되므로 **@RequestParam(defaultValue = "")** 등으로 사용가능!!
+      * `redirectAttributes.addFlashAttribute` 의 경우 불가능!! 파라미터 전송이 아니기 때문이며 세션에 저장해서 딱 한번 HTML에만 전송될 뿐!!
 
 **jar vs war**
 
@@ -865,104 +936,39 @@ public class OrderRunner implements ApplicationRunner {
 
 <br>
 
-**타임리프 문법**
+**타입 컨버터 (참고)**
 
-* 핵심 : 서버로 실행(뷰 템플릿 사용)하면 타임리프 문법들이 적용해서 동적으로 변경!
-  * 스프링 부트는 "뷰 리졸버" 를 자동 등록하는데, 이때 설정파일에 등록한  `spring.mvc.view.prefix , spring.mvc.view.suffix` 정보를 사용해서 등록한다.
-  * "뷰 리졸버" 에 필요한 "경로" 를 설정하는 부분인데 요즘 Thymeleaf 는 이것도 자동으로 등록해줘서 설정할 필요가 없다.
-    * 혹시나 JSP 사용할 경우에는 이부분 기억해두자.
-* 타임리프 사용 선언
-  * `<html xmlns:th="http://www.thymeleaf.org">`
-* 속성 변경
+* **(1) 웹 - `@Requestparam, @ModelAttribute, @PathVariable` 스프링이 기본 지원**
 
-  * `th:href="@{/css/bootstrap.min.css}"`
-  * `th:onclick="|location.href='@{/basic/items/add}'|"`
-  * `<td th:text="${item.price}">10000</td>`
-  * `th:value="${item.id}"`
-  * `th:action`
-  * ... 등등 매우 다양
-* URL 링크표현식 - @{...}
+  * 예로 `@PathVariable Long itemId` 는 자동으로 String->Long 타입변환
 
-  * `th:href="@{/css/bootstrap.min.css}"`
+  * "확장 가능" 하고, "**애노테이션**"을 제공
 
-  * `th:href="@{/basic/items/{itemId}(itemId=${item.id})}"`
-  * 심화) `th:href="@{/basic/items/{itemId}(itemId=${item.id}, query='test')}" `
-    * 생성된 링크: `http://localhost:8080/basic/items/1?query=test`
-  * 간편) `th:href="@{|/basic/items/${item.id}|}"`
-    * 리터럴 대체문법 적용가능
-* 리터럴 대체 - |...|
+    * **@DateTimeFormat**예시 : DB엔 LocalDateTime타입, Thymeleaf는 지정한 pattern 사용
+    * "타임리프 사용법" - `th:field, ${{...}}`
+      * **예로) `th:field="*{{date1}}"` 이런식으로 사용**
 
-  * 타임리프에서 문자와 표현식 등은 분리되어 있기 때문에 더해서 사용해야 한다.
-    * `<span th:text="'Welcome to our application, ' + ${user.name} + '!'">`
-  * 다음과같이 리터럴 대체문법을사 용하면, 더하기 없이 편리하게 사용할 수 있다.
-    * `<span th:text="|Welcome to our application, ${user.name}!|">`
-    * `th:onclick="|location.href='@{/basic/items/{itemId}/edit(itemId=${item.id})}'|"`
-* 변수표현식 - ${...}
+    ```java
+    @Data
+    static class Form {
+        @NumberFormat(pattern = "###,###") // 타입 컨버터
+        private Integer number;
+    
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        private LocalDateTime localDateTime; 
+        // db엔 LocalDateTime 형태로 저장
+        // Thymeleaf에선 지정한 "패턴"으로 출력
+    }
+    ```
 
-  * `<td th:text="${item.price}">10000</td>`
-* 반복출력 - th:each
 
-  * `<tr th:each="item : ${items}">`
-  * 컬렉션의 수만큼 `<tr>..</tr>` 이 하위 테그를 포함해서 생성된다.
-* 조건문 - th:if
-
-  * `<h2 th:if="${param.status}" th:text="'저장 완료'"></h2>`
-* 변수선언 - th:with
-  * `th:with="first=${users[0]}"` -> frist 로 사용 가능
-* text, utext, [[...]], [(...)]
-  * text vs utext
-    - th:text = Hello \<b>Spring!\</b>
-    - th:utext = Hello **Spring!**
-
-  * [[...]] vs [(...)] -> 속성이 아니라 컨텐츠 안에서 직접 출력!
-    - [[...]] = Hello \<b>Spring!\</b>
-    - [(...)] = Hello **Spring!**
-
-* 편의 객체 제공 - param, session 등
-  * `param.title` 같이 파라미터 바로 접근 가능
-* 비교연산 - HTML 엔티티 주의!! 
-  * \> : gt 로 표기
-
-* Elvis 연산자 - `"${data}? : _"`
-  * data 있으면 true조건 실행
-
-* No-Operation : "_" 
-  * 마치 타임리프 실행안한것처럼 동작
-
-* 타임리프 파서 주석 : `<!--/* [[${data}]] */-->`
-  * 참고로 `/*사이에서 여러줄 가능*/`
-  * 렌더링때 삭제되는 것
-
-* 블록 - `<th:block>`
-  * `<th:block>` 는 타임리프가 제공하는 유일한 자체 "태그"
-  * **렌더링 할때는 아예 태그가 삭제**
-* fragment, JS
-  * fragment : 코드 재사용
-  * JS : javascript 에서 사용 가능
-* `<input>과<label>` 에서 th:for로 id값 연결 하는 편
-  * 동적 id 인식 - `#ids.prev()`
+* **(2) HTTP API (@ResponseBody 등) - 의 경우 지원하지 않는다(HttpMessageConverter 는 "컨버전 서비스 적용 불가")**
+  * **이 경우에는 Jackson 같은 라이브러리에서 포맷터를 찾아 사용**
+  * JSON->객체,  객체->JSON 등등 쉽게 타입 변환 가능
 
 <br>
 
-**타임리프 + 스프링 통합 문법**
-
-* **th:object, th:field, *{itemName} 활용**
-* **체크박스, 라디오버튼, 셀렉트 박스에서 활용**
-* **(중요)"메시지, 국제화 기능"**
-  * `application.properties` 에 `spring.messages.basename=message` 를 추가!!
-* 여러개 추가할거면?? 예로 errors.properties 추가한다고 하면 message, errors 이렇게 이어적으면 됨
-  * 이후 `messages.properties` 를 추가해서 messages에 담을 내용을 세팅
-* 타임리프로 사용 예시 : `<h2 th:text="#{page.addItem}">상품 등록</h2>` `
-* **(참고) nullsafe**
-  * `th:if="${errors?.containsKey('globalError')}"` 에서 ?를 통해 null 로 나타나므로 if는 false로 반환
-  * ?가 없으면 null.containesKey... 로 에러
-* "컨트롤러"에서 그냥 @GET 으로 페이지 로딩할때 item을 빈값이라도 선언해둬서 Model에 담아 반환하는걸 권장
-  * **검증 실패 때 forward로 "자원 재활용"이 됨.**
-  * HTML 코드도 더 깔끔 -  if문으로 null인지 확인할 필요없이 그냥 item을 타임리프 문법으로 사용하면 되기때문
-
-<br>
-
-**로그인 구현 방식**
+**"로그인 구현 방식"의 기본 지식**
 
 * 컨트롤러 - ArgumentResolver 활용해서 @Login으로 바로 Member 객체 가져오기
 
@@ -1035,31 +1041,6 @@ public class OrderRunner implements ApplicationRunner {
 
 <br>
 
-**타입 컨버터 (참고)**
-
-* 웹 - `@Requestparam, @ModelAttribute, @PathVariable` 스프링이 기본 지원
-
-  * "타임리프" 도 지원 - `th:field, ${{...}}`
-
-* 단, **HTTP API (@ResponseBody 등)**의 경우 지원하지 않는다(**HttpMessageConverter 는 "컨버전 서비스 적용 불가"**)
-  * **이 경우에는 Jackson 같은 라이브러리에서 포맷터를 찾아 사용**
-
-* 물론 "확장 가능" 하고, 아래는 애노테이션 제공
-
-  ```java
-  @Data
-  static class Form {
-      @NumberFormat(pattern = "###,###")
-      private Integer number;
-  
-      @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-      private LocalDateTime localDateTime;
-  }
-  ```
-
-
-<br>
-
 **"파일 업로드, 다운로드" 기본 지식**
 
 * **파일은 "스토리지"** 저장, 경로와 이름 등 정보**(EX: Item)는 "DB"** 저장
@@ -1081,3 +1062,312 @@ public class OrderRunner implements ApplicationRunner {
     * 파일 다운이 되려면 반환할때 **"헤더" 가 필수**
     * 파일 다운로드시에는 고객이 업로드한 파일 이름으로 다운로드 하는게 좋다. 
       * Content-Disposition 해더에 `attachment; filename="업로드 파일명"`
+
+<br>
+
+**포트생략법**
+
+* 배포할 때 `http://localhost:8080` 이 아닌 `http://localhost` 로 접속법(포트생략법)
+
+* http는 80포트를 기본값으로 사용 / 개발할 때 사용한 포트는 8080포트
+* 따라서 **"포트포워딩"** 을 사용해서 **80포트 접속시 -> 8080포트로 변경**해주면 끝
+* 예시
+  * 등록 : `sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
+  * 조회 : `iptables -nL PREROUTING -t nat --line-numbers`
+  * 삭제 : `iptables -t nat -D PREROUTING {number}`
+
+
+<br><br>
+
+# Thymeleaf 로 웹 개발 TIP 모음
+
+버전.. 환경설정 등 기초적인건 생략
+
+## (1) Thymeleaf 문법
+
+**타임리프 문법**
+
+* 핵심 : 서버로 실행(뷰 템플릿 사용)하면 타임리프 문법들이 적용해서 동적으로 변경!
+  * 스프링 부트는 "뷰 리졸버" 를 자동 등록하는데, 이때 설정파일에 등록한  `spring.mvc.view.prefix , spring.mvc.view.suffix` 정보를 사용해서 등록한다.
+  * "뷰 리졸버" 에 필요한 "경로" 를 설정하는 부분인데 요즘 Thymeleaf 는 이것도 자동으로 등록해줘서 설정할 필요가 없다.
+    * 혹시나 JSP 사용할 경우에는 이부분 기억해두자.
+* **타임리프 사용 선언**
+  * `<html xmlns:th="http://www.thymeleaf.org">`
+* 속성 변경
+
+  * `th:href="@{/css/bootstrap.min.css}"`
+  * `th:onclick="|location.href='@{/basic/items/add}'|"`
+  * `<td th:text="${item.price}">10000</td>`
+  * `th:value="${item.id}"`
+  * `th:action`
+  * ... 등등 매우 다양
+* **URL 링크표현식 - @{...}**
+  * `th:href="@{/css/bootstrap.min.css}"`
+
+  * `th:href="@{/basic/items/{itemId}(itemId=${item.id})}"`
+  * 심화) `th:href="@{/basic/items/{itemId}(itemId=${item.id}, query='test')}" `
+    * 생성된 링크: `http://localhost:8080/basic/items/1?query=test`
+  * **간편) `th:href="@{|/basic/items/${item.id}|}"`**
+    * **리터럴 대체문법 적용가능 => 이거 쓰자**
+* **리터럴 대체 - |...|**
+  * 타임리프에서 문자와 표현식 등은 분리되어 있기 때문에 더해서 사용해야 한다.
+    * `<span th:text="'Welcome to our application, ' + ${user.name} + '!'">`
+  * 다음과같이 리터럴 대체문법을 사용하면, 더하기 없이 편리하게 사용할 수 있다.
+    * **`<span th:text="|Welcome to our application, ${user.name}!|">`**
+    * **`th:onclick="|location.href='@{/basic/items/{itemId}/edit(itemId=${item.id})}'|"`**
+* 변수표현식 - ${...}
+
+  * `<td th:text="${item.price}">10000</td>`
+* 반복출력 - th:each
+
+  * `<tr th:each="item : ${items}">`
+  * 컬렉션의 수만큼 `<tr>..</tr>` 이 하위 테그를 포함해서 생성된다.
+* **조건문 - th:if or Default**
+  * **th:if 문들은 false인 경우 아예 태그를 렌더링을 안해서 그럴경우 사용!!**
+    * `<h2 th:if="${param?.status}" th:text="'저장 완료'"></h2>`
+    * `<h2 th:unless="${param?.status}" th:text="'저장 실패'"></h2>`
+
+  * **그외 + Default 경우**
+    * `th:text="|B1 ~ B${(totalCount!=null) ? (totalCount/10+1) : '??'}F|"`
+    * 또는 Default 활용 : `th:text="|B1 ~ B${(totalCount) ?: '??'}F|"`
+      * Default는 자동으로 null을 잡아주지만, 
+      * null/10 이런건 불가해서 이런경우는 위처럼 it-then-else 사용
+
+* 변수선언 - th:with
+  * `th:with="first=${users[0]}"` -> frist 로 사용 가능
+* text, utext, [[...]], [(...)]
+  * text vs utext
+    - th:text = Hello \<b>Spring!\</b>
+    - th:utext = Hello **Spring!**
+
+  * [[...]] vs [(...)] -> 속성이 아니라 컨텐츠 안에서 직접 출력!
+    - [[...]] = Hello \<b>Spring!\</b>
+    - [(...)] = Hello **Spring!**
+* 편의 객체 제공 - param, session 등
+  * `param.title` 같이 파라미터 바로 접근 가능
+* 비교연산 - HTML 엔티티 주의!! 
+  * \> : gt 로 표기
+* Elvis 연산자 - `"${data}? : _"`
+  * data 있으면 true조건 실행
+* No-Operation : "_" 
+  * 마치 타임리프 실행안한것처럼 동작
+* 타임리프 파서 주석 : `<!--/* [[${data}]] */-->`
+  * 참고로 `/*사이에서 여러줄 가능*/`
+  * 렌더링때 삭제되는 것
+* **블록 - `<th:block>`**
+  * `<th:block>` 는 타임리프가 제공하는 유일한 자체 "태그"
+  * **렌더링 할때는 아예 태그가 삭제**
+* **fragment, JS**
+  * fragment : 코드 재사용
+  * JS : javascript 에서 사용 가능
+* **`<input>과<label>` 에서 th:for로 id값 연결 하는 편 -> 보통 form 에 잘 구성**
+  * 동적 id 인식 - `#ids.prev()`
+* **`<table> <tr> <td> <th>` 형태로 데이터 잘 표현** 
+* **`<div>` 로 데이터 잘 표현한 경우 `<th:block>` 같이 사용하면 깔끔**
+* **젤 중요!! `th:field` 는 "검증"에 매우 유용해서 그냥 사용가능하면 무조건 사용**
+  * value에 값 자동 넣어주며, id, name 자동 생성 및 체크박스도 자동체크 등 - **input**에 주 사용
+  * `*{...}` : 선택 변수 식으로써 `th:object` 에서 선택한 객체에 접근 활용
+  * **그냥 여러개 쓸땐 th:object로 관리쉽게 쓰고, th:field는 input이나 체크박스에 사용하자**
+
+
+<br>
+
+**타임리프 + 스프링 통합 문법**
+
+* **th:object, th:field, *{itemName} 활용**
+  * Form과 함께 Input, 체크박스, 라디오버튼, 셀렉트 박스에서 활용
+  * TIP) addForm, editForm 이렇게 2개 따로 만드는게 개발하기 수월
+
+* **(중요)"메시지, 국제화 기능"**
+  * `application.properties` 에 `spring.messages.basename=messages` 를 추가!!
+* 여러개 추가할거면?? 예로 errors.properties 추가한다고 하면 message, errors 이렇게 이어적으면 됨
+  * 이후 `messages.properties` 를 추가해서 messages에 담을 내용을 세팅
+* 타임리프로 사용 예시 : `<h2 th:text="#{page.addItem}">상품 등록</h2>` `
+* **(참고) nullsafe**
+  * `th:if="${errors?.containsKey('globalError')}"` 에서 ?를 통해 null 로 나타나므로 if는 false로 반환
+  * ?가 없으면 null.containesKey... 로 에러
+* "컨트롤러"에서 그냥 @GET 으로 페이지 로딩할때 item을 빈값이라도 선언해둬서 Model에 담아 반환하는걸 권장
+  * **검증 실패 때 forward로 "자원 재활용"이 됨.**
+  * HTML 코드도 더 깔끔 -  if문으로 null인지 확인할 필요없이 그냥 item을 타임리프 문법으로 사용하면 되기때문
+
+<br>
+
+## (2) Thymeleaf TIP
+
+**Page 생성 기본과정**
+
+* \<div> + Container 를 활용해서 전체적인 "페이지 틀" 을 먼저 작성
+* fragment로 head, header, footer, scripts, modal 등등 작성 (scripts, modal은 관리편리)
+* 데이터 간단히 표현 : `table, td, tr 등등` 또는 `div로 잘 구현`
+  * `th:each` + `<th:block>` 도 적절히 함께 활용
+* FORM 데이터 : `label, input, 체크박스 등등` 권장
+  * th:field(name,id,value자동) 와 *{...} 랑 th:object(데이터 관리쉽게) 함께 사용 권장
+  * `th:errors` 등등 도 함께 사용
+* 문법 잘 활용
+  * |...| : `<span th:text="|Welcome to our application, ${user.name}!|">`
+  * @{} : 간편) -`th:href="@{|/basic/items/${item.id}|}"`
+
+<br>
+
+**css**
+
+* 부트스트랩, J쿼리 기본 import + basic.css(전체 CSS) 정도는 깔고가면 편리
+
+<br>
+
+**PRG 패턴 적용(위에 PRG 정리한 내용 참고) - 무한 POST 방지**
+
+* 추가로 forward 사용가능한 건 forward 형태로!
+* Redirect, Forward 개념 인지하고 사용!!
+
+**자원 재활용(forward) : 폼... 분리 가능한건 분리해서 작성 권장 - addForm, editForm**
+
+* 이거때문에 굉장히 많은 삽질 ㅜㅜ
+  * GET에 꼭 빈값이라도 엔티티 Model에 삽입 - th:object 함께 사용
+  * POST에는 `@Validated @ModelAttribute("item") AddItemDto form, BindingResult bindingResult, RedirectAttributes redirectAttributes)` 이런식으로 파라미터 거진 필수
+  * 장점은 검증실패시 html로 바로 return보내게 로직 작성시 서버단에서만 동작하는 forward 이기 때문에 자원 재활용!!
+
+**검증 : 위에서 따로 정리했기때문에 꼭 참고**
+
+* 참고) id에는 @NotBlank, pw에는 @Pattern(정규식="^[0-9]+") 등 추천!
+  * 특히 pw는 클라에서도 따로 검증하더라도 Postman 같은걸로 접근 가능하기때문에 한번더 "검증"
+
+<br>
+
+**Model, @ModelAttribute("item"), forward, RedirectAttributes, UpdateItemDto, @PathVariable, @RequestParam**
+
+* API 말고 여기 웹 개발 컨트롤러에서 주로 사용한 것들인데 꼭 동작을 전부 이해해둬야 함
+* **Model** - **(1)html로 return**때 데이터 자주 넘겨줬음(forward로 볼 수 있음)
+  * **(2)return을 forward:/ 형태로 동일 컨트롤러내에서는 다른 곳으로 요청가능(서버내에서)**
+  * **(3)return을 html이 아닌 redirect로** 넘길시 새롭게 웹브라우저가 다시요청 하는것이므로 Model 값 사라져서 이땐 사용안하고 **RedirectAttributes 를 사용**
+    * RedirectAttributes 로 데이터 넘겨줄수 있기 때문
+  * **@ModelAttribute("item") UpdateItemDto form** - Post때 주로 사용하며 Form데이터 자동 매핑 후 Model에 item 이름으로 기록! 
+    * **UpdateItemDto** 만 사용시 @ModelAttribute 과 동일하되 Model에 UpdateItemDto 이름으로 기록
+    * form 데이터 넘길땐 UpdateItemDto 관련 데이터를 전부 서버로 form에서 넘겨줘야하며 이때 View에 안보여줄 데이터는 \<input> + hidden 으로 넘겨주면 간단하다.
+* @PathVariable - URL 뒤의 값 바로 사용 (자주 사용)
+  * @RequestParam - 쿼리 파라미터값 가져올때 자주사용 (기본값 설정도 가끔사용)
+
+<br>
+
+**application.yml**
+
+* "프로필" 사용 - 개발용, 배포용 따로설정
+  * "외부설정" 사용 -> 경로 등등
+  * thymeleaf 캐시 사용X -> 실시간 reload
+  * "메시지-국제화" 사용(messages.properties) -> thymeleaf와 연동 최고
+  * 포트 8080(개발용), 포트 80(배포용) -> http는 80포트 기본값
+  * 로그레벨 설정
+
+```yaml
+# default 프로필 -> 개발모드로 사용
+spring:
+  # thymeleaf 캐시 사용 X로 실시간 reload
+  thymeleaf:
+    cache: false
+    prefix: file:src/main/resources/templates/ # thymeleaf 경로지정
+
+  # H2 DB
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/secret-art-typing-gallery/secret
+    username: sa
+    password:
+      driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create # DB 초기화 사용
+    properties:
+      hibernate:
+#        show_sql: true
+        format_sql: true
+
+  # 메시지 - thymeleaf 연동
+  messages:
+    basename: messages
+
+server:
+  port: 8080
+#  address: 223.39.212.163
+  servlet:
+    session:
+      timeout: 30m # session timeout 30min
+
+logging.level: # DB 쿼리 로그
+  org.hibernate.SQL: debug
+  org.hibernate.type: trace
+
+my: # 외부설정 값
+  datasource:
+    imgPath: C:/images-spring/
+
+logging:
+  level:
+    com.dau.secretarttypinggallery.controller: debug # 컨트롤러에서만 로그확인
+--- # 프로필 구분자
+# prod 프로필 -> 배포모드로 사용
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # thymeleaf 캐시 사용!!
+  thymeleaf:
+    cache: true
+    prefix: classpath:/templates/ # 리눅스용(배포환경) 경로지정
+
+  # MYSQL DB
+  datasource:
+    url: jdbc:mysql://localhost:3306/secret?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
+    username: secretUser
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+#      ddl-auto: none # DB 초기화 사용 X
+      ddl-auto: create # DB 초기화 사용
+
+  # 메시지 - thymeleaf 연동
+  messages:
+    basename: messages
+
+server:
+  port: 8080 # 포트 포워딩으로 http(80) -> 8080 설정하면 "URL에 포트없이 바로 접속가능"
+  servlet:
+    session:
+      timeout: 30m # session timeout 30min
+
+my: # 외부설정 값
+  datasource:
+    imgPath: /var/www/images-spring/
+
+logging:
+  level:
+    com.dau.secretarttypinggallery.controller: info # 배포는 기본값(=info) 사용
+```
+
+<br>
+
+**타입 컨버터**
+
+* DB에는 LocalDateTime(원하는..) 형태로 저장 후 HTML 출력때 원하는 "타입 컨버터" 사용
+* ` @DateTimeFormat(pattern = "yy.MM.dd.HH:mm"), @NumberFormat(pattern = "###,###")` 등등 사용 가능
+* 타임리프에 적용법 : `th:field=*{{...}}`
+
+<br>
+
+**예외처리(HTML 페이지 기본제공 사용)**
+
+* 웹 에러 처리의 경우에는 기존 "스프링 부트 기본제공" (BasicErrorController) 을 규칙에 맞게끔 사용
+  * `/error` 경로의 html을 기본 접근
+* **뷰선택 우선순위(BasicErrorController 가 제공하는 기능)**
+  * **1. 뷰템플릿**
+    * resources/templates/error/500.html
+    * html resources/templates/error/5xx.html
+  * **2. 정적리소스( static , public ) resources/**
+    * static/error/400.html
+    * resources/static/error/404.html 
+    * resources/static/error/4xx.html
+  * **3. 적용대상이없을 때뷰이름( error )**
+    * resources/templates/error.html
+
