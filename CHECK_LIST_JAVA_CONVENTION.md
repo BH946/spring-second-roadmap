@@ -10,7 +10,9 @@
 
 # CHECK LIST
 
-**깃 커밋 컨벤션**
+
+
+## 깃 커밋 컨벤션
 
 * feat (feature)
   * ex) `git commit -m "feat: xxx 기능 구현"`
@@ -24,11 +26,14 @@
 * chore (maintain)
   * 유지보수 관련 빌드, 패키지 매니저 등 설정 - **Production Code 변경X**
 
-<br>
+<br><br>
 
-**구글 자바 컨벤션 - [자세한것은 이곳에서](https://github.com/JunHoPark93/google-java-styleguide), [자동 적용법](https://blog.dglee.co.kr/22)**
+## 구글 자바 컨벤션
 
-* **[스타일가이드](https://blog.dglee.co.kr/22), [깃허브](https://github.com/google/styleguide)**
+* **참고 문서 : [자세한것은 이곳에서](https://github.com/JunHoPark93/google-java-styleguide), [자동 적용법](https://blog.dglee.co.kr/22)**
+
+* **구글 자바 컨벤션 설치 : [스타일가이드](https://blog.dglee.co.kr/22), [깃허브](https://github.com/google/styleguide)**
+  
   * **Ctrl+Alt+L(자동 정렬) / Ctrl+Alt+I(임포트 정리)**
 * 파일 코드 구조 : 라이센스(저작권) -> 패키지 구문 -> 임포트 구문 -> 하나의 최상위 클래스
 
@@ -93,9 +98,9 @@
   * 줄바꿈 들여쓰기 기본 8칸(스페이스8)
   * 문자 유니코드, 열제한 120
 
-<br>
+<br><br>
 
-**프리코스 과정 중 컨벤션**
+## 프리코스 과정 중 컨벤션
 
 * 깃 관리할 필요 없는 파일들이 존재
   * `.class` 파일은 java코드로 생성되어서 관리할 필요 X 

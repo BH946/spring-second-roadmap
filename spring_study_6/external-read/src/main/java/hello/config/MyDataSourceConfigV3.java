@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * @EnableConfigurationProperties 로 MyDataSourcePropertiesV3 를 사용 및 스프링 빈
+ * @Import 를 통해서 "컴포넌트 스캔 대상!"
  */
 @Slf4j
 @EnableConfigurationProperties(MyDataSourcePropertiesV3.class)
